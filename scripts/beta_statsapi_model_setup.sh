@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#set -x
+set -e
 
-
+DEFAULT_API_VER='1.0'
 API_VER=''
 STATS_API_VER_PATH=''
 
@@ -52,21 +52,24 @@ save_json_to_path() {
         mkdir -p "$dir_name"
     fi
     echo "$json" | jq '.' >> "$path"
+    chmod 444 "$path"
 }
 
 check_md5sum() {
     check_path="$1"
     check_json=$2
-    if [ -e "$check_path.tmp" ]; then
-        rm "$check_path.tmp"
+    tmp_path="$(echo "$check_path" | sed 's/\.json$/\.tmp\.json/g')"
+    if [ -e "$tmp_path" ]; then
+        rm -f "$tmp_path"
     fi
-    save_json_to_path "$check_json" "$check_path.tmp"
+    save_json_to_path "$check_json" "$tmp_path"
     old_md5=$(get_md5sum "$check_path")
-    tmp_md5=$(get_md5sum "$check_path.tmp")
+    tmp_md5=$(get_md5sum "$tmp_path")
     if [ ! "$old_md5" = "$tmp_md5" ]; then
-        echo "ERROR: Found api json where (old != tmp) md5sum: ($old_md5 != $tmp_md5) from $check_path (see .tmp version)"
+        echo "ERROR: Found api json where md5sum old != tmp: ($old_md5 != $tmp_md5) from $check_path (see .tmp version)"
+        exit 1
     else
-        rm "$check_path.tmp"
+        rm -f "$tmp_path"
     fi
 }
 
@@ -87,20 +90,25 @@ save_api_docs() {
     api_docs=$(get_json_with_src 'api_docs')
     # determine api version
     API_VER=$(echo "$api_docs" | jq -r .apiVersion)
+    echo "FOUND API_VER: \"$API_VER\""
     APIS=$(echo "$api_docs" | jq -r '[ .apis[] | select( .path | test("authentication|-controller") | not ) ]')
     AUTH=$(echo "$api_docs" | jq -r .authorizations)
     INFO=$(echo "$api_docs" | jq -r .apiVersion)
     SWAG=$(echo "$api_docs" | jq -r .swaggerVersion)
+    SRC_URL=$(echo "$api_docs" | jq .src_url)
+
+    echo "SRC_URL: $SRC_URL"
 
     # create path to save by version
     STATS_API_VER_PATH="$CONFIGS_PATH/api_docs-$API_VER.json"
 
     API_DOCS=$(echo "{
-      \"apiVersion\": $API_VER,
+      \"apiVersion\": \"$API_VER\",
       \"apis\": $APIS,
       \"authorizations\": $AUTH,
       \"info\": $INFO,
-      \"swaggerVersion\": $SWAG
+      \"swaggerVersion\": \"$SWAG\",
+      \"src_url\": $SRC_URL
     }" | jq \
     --arg url https://statsapi.mlb.com/api \
     --arg api_doc $BETA_STATSAPI_URL \
@@ -116,14 +124,72 @@ save_api_docs() {
 set_api_version_info() {
     # determine api version
     if [ -z "$API_VER" ]; then
-        echo "API_VER NOT SET, GETTING FROM $BETA_STATSAPI_URL"
-        API_VER=$(get_json "$api_docs" | jq -r .apiVersion)
+#        echo "API_VER NOT SET, GETTING FROM $BETA_STATSAPI_URL"
+#        API_VER=$(get_json "api_docs" | jq -r .apiVersion)
+        echo "API_VER NOT SET, USING DEFAULT: $DEFAULT_API_VER"
+        API_VER="$DEFAULT_API_VER"
+        echo "API_VER SET: $API_VER"
     fi
     if [ -z "$STATS_API_VER_PATH" ]; then
         # create path to save by version
-        echo "STATS_API_VER_PATH NOT SET, GETTING FROM $API_VER"
+        echo "STATS_API_VER_PATH NOT SET, GETTING FROM API_VER: $API_VER"
         STATS_API_VER_PATH="$CONFIGS_PATH/api_docs-$API_VER.json"
+        echo "STATS_API_VER_PATH SET: $STATS_API_VER_PATH"
     fi
+}
+
+add_awards_to_config_doc() {
+    config_doc="$1"
+    echo "$config_doc" | jq -r "{
+        apiVersion: .apiVersion,
+        api_path: .api_path,
+        apis: (.apis + [{
+            description: \"awards\",
+            path: \"/v1/awards\",
+            operations: [{
+                consumes: [\"application/json\"],
+                deprecated: \"false\",
+                items: { type: \"AwardsTypeRestObject\" },
+                method: \"GET\",
+                nickname: \"awards\",
+                notes: \"awards\",
+                parameters: [],
+                produces: [ \"*/*\" ],
+                responseMessages: [
+                    { code: 200, message: \"OK\", responseModel: \"array\"},
+                    { code: 401, message: \"Unauthorized\" },
+                    { code: 403, message: \"Forbidden\" },
+                    { code: 404, message: \"Not Found\" }
+                ],
+                summary: \"List all awards\",
+                type: \"array\",
+                uniqueItems: false
+            }],
+        }]),
+        basePath: .basePath,
+        consumes: .consumes,
+        models: .models,
+        produces: .produces,
+        resourcePath: .resourcePath,
+        src_url: .src_url,
+        swaggerVersion: .swaggerVersion,
+    }"
+}
+
+filter_duplicate_api_models_from_draft() {
+    draft_doc="$1"
+    echo "$draft_doc" | jq -r "{
+        apiVersion: .apiVersion,
+        api_path: .api_path,
+        apis: [(.apis[] | select( .path | test(\"/v1/draft/prospects$\") | not ))],
+        basePath: .basePath,
+        consumes: .consumes,
+        models: .models,
+        produces: .produces,
+        resourcePath: .resourcePath,
+        src_url: .src_url,
+        swaggerVersion: .swaggerVersion,
+    }"
 }
 
 save_api_by_path() {
@@ -134,12 +200,24 @@ save_api_by_path() {
     api_doc=$(get_json_with_src "api_docs/$save_api_path"  | jq \
         --arg api_path "$save_api_path" \
         --arg API_VER "$API_VER" \
-        '{ api_path: $api_path, apiVersion: $API_VER } + .')
+        '{ api_path: $api_path, apiVersion: "$API_VER" } + .')
+
+    if [ "$save_api_path" = 'stats-api/config' ]; then
+        api_doc="$(add_awards_to_config_doc "$api_doc")"
+    elif [ "$save_api_path" = "stats-api/draft" ]; then
+        api_doc="$(filter_duplicate_api_models_from_draft "$api_doc")"
+    fi
     save_with_md5sum "$CONFIGS_PATH/$api_name.json" "$api_doc"
 }
+
+
+##############
+#### MAIN ####
+##############
 
 save_api_docs
 set_api_version_info
 for api_path in $(<"$STATS_API_VER_PATH" jq -r '.apis[].path[1:]'); do
     save_api_by_path "$api_path"
+    sleep 1
 done
