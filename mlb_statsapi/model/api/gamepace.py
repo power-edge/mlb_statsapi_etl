@@ -1,10 +1,10 @@
 """
 created by nikos at 4/26/21
 """
-from ..base import MLBStatsAPIEndpoint
+from ..base import MLBStatsAPIEndpointModel
 
 
-class GamepaceModel(MLBStatsAPIEndpoint):
+class GamepaceModel(MLBStatsAPIEndpointModel):
     """"
     This endpoint has no apis
     """

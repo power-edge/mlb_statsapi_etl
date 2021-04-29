@@ -7,6 +7,8 @@ API_VER=''
 STATS_API_VER_PATH=''
 
 BETA_STATSAPI_URL='https://beta-statsapi.mlb.com/api'
+BETA_STATSAPI_DOC='https://beta-statsapi.mlb.com/docs/'
+
 
 ###########################################
 # SEE https://beta-statsapi.mlb.com/docs/ #
@@ -111,7 +113,7 @@ save_api_docs() {
       \"src_url\": $SRC_URL
     }" | jq \
     --arg url https://statsapi.mlb.com/api \
-    --arg api_doc $BETA_STATSAPI_URL \
+    --arg api_doc $BETA_STATSAPI_DOC \
     '{
       api_doc: $api_doc,
       url: $url

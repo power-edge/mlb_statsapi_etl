@@ -1,5 +1,5 @@
 {
-  "api_doc": "https://beta-statsapi.mlb.com/api",
+  "api_doc": "https://beta-statsapi.mlb.com/docs/",
   "url": "https://statsapi.mlb.com/api",
   "apiVersion": "1.0",
   "apis": [

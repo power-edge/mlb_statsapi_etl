@@ -1,11 +1,11 @@
 """
 created by nikos at 4/26/21
 """
-from ..base import MLBStatsAPIEndpoint
+from ..base import MLBStatsAPIEndpointModel
 from ..utils import api_path
 
 
-class HomeRunDerbyModel(MLBStatsAPIEndpoint):
+class HomeRunDerbyModel(MLBStatsAPIEndpointModel):
 
     @api_path("/v1/homeRunDerby", name="homeRunDerbyBracket")
     def homeRunDerby(self, **kwargs):

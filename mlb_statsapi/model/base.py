@@ -7,7 +7,7 @@ import os
 
 from serde import Model, fields, tags
 
-# from ..utils import get_api_object
+from .utils import LogMixin, StatsAPIFileObject
 
 
 __beta_stats_api_default_version__ = '1.0'
@@ -64,7 +64,7 @@ class Parameter(Model):
     defaultValue: fields.Str()
     description: fields.Str()
     name: fields.Str()
-    paramType: fields.Str()
+    paramType: fields.Choice(['path', 'query'])
     required: fields.Bool()
     type: fields.Str()
     items: fields.Optional(fields.Nested(ItemType))
@@ -75,7 +75,7 @@ class Parameter(Model):
     enum: fields.Optional(fields.List(fields.Str))
 
 
-class Operation(Model):
+class OperationModel(Model):
     consumes: fields.List(fields.Str)
     deprecated: fields.Str()
     method: fields.Choice(['GET', 'POST'])
@@ -91,6 +91,14 @@ class Operation(Model):
     items: fields.Optional(fields.Nested(ItemType))
     uniqueItems: fields.Optional(fields.Bool)
 
+    @property
+    def path_params(self):
+        return [param for param in self.parameters if param.paramType == "path"]
+
+    @property
+    def query_params(self):
+        return [param for param in self.parameters if param.paramType == "query"]
+
 
 class APIModelBase(Model):
     description: fields.Str()
@@ -101,12 +109,16 @@ class APIModelBase(Model):
 
 
 class EndpointAPIModel(APIModelBase):
-    operations: fields.List(Operation)
+    operations: fields.List(OperationModel)
+
+    @property
+    def get_operations_map(self):
+        return {o.nickname: o for o in self.operations if o.method == "GET"}
 
 
-class MLBStatsAPIEndpoint(MLBStatsAPIModel):
+class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
+
     _fmt_rel_path = 'stats-api-{api_version}/{name}.json'
-    # _fmt_rel_path
 
     apis: fields.List(EndpointAPIModel)
     api_path: fields.Str()
@@ -119,8 +131,22 @@ class MLBStatsAPIEndpoint(MLBStatsAPIModel):
     class Meta:
         tag = tags.Internal(tag='endpoint')
 
-    def get(self, **kwargs):
-        return get_api_object(self, **kwargs)
+    @property
+    def _api_path_name_map(self):
+        return {(api.path, api.description): api for api in self.apis}
+
+    def get_api_file_object(self, **kwargs):
+        path, name = kwargs['path'], kwargs['name']
+        api = self._api_path_name_map[path, name]
+        operation = api.get_operations_map[name]
+        path_params, query_params = kwargs.get('path_params'), kwargs.get('query_params')
+        return StatsAPIFileObject(
+            endpoint=self,
+            api=api,
+            operation=operation,
+            path_params=path_params,
+            query_params=query_params
+        )
 
 
 class RequestParams:
@@ -129,32 +155,3 @@ class RequestParams:
         self.api = api
         self._path = {}
         self._query = {}
-
-    # def with_path_param(self, param, value):
-    #     self._path['param']
-    #     return
-
-
-class APIObject:
-
-    base_api_url = 'https://statsapi.mlb.com/api'
-    # base_api_path = '/statsapi.mlb.com/api'
-
-    def __init__(self, path):
-        pass
-
-
-def get_api_object(api_model: EndpointAPIModel, **kwargs):
-    # from .base import EndpointAPIModel
-    api_model: EndpointAPIModel
-    path, name = kwargs['path'], kwargs['name']
-    api: EndpointAPIModel = {a.path: a for a in api_model.apis}[path]
-
-    def paramSortKey(param):
-        return param.name
-    path_params = sorted([param for param in api.parameters if param.paramType == "path"], key=paramSortKey)
-    query_params = sorted([param for param in api.parameters if param.paramType == "query"], key=paramSortKey)
-
-    op = {o.nickname: o for o in api.operations if o.method == "GET"}[name]
-    # print(api_model, path, name, op)
-    print(api.to_json(indent=2))

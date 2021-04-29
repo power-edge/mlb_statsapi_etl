@@ -1,3 +1,4 @@
 # mlb_statsapi
+request==2.25.1
 serde==0.8.1
 numpy==1.20.2
