@@ -115,8 +115,21 @@ class EndpointAPIModel(APIModelBase):
     def get_operations_map(self):
         return {o.nickname: o for o in self.operations if o.method == "GET"}
 
+    @property
+    def operation(self):
+        return self.get_operations_map[self.description]
+
 
 class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
+    """
+    Each api in the api_docs gets an inheriting class to define methods to for the endpoint access patterns.
+
+    Some of the api doc json files have small naming issues, therefore the @api_path wraps functions to make explicit
+    the path and name to search, where the name corresponds to the api.description or the api.operation.nickname, but
+    method names are corrected for misnaming in the underlying documentation.
+
+    These methods return a StatsAPIFileObject which is endpoint/api aware, and can get, save, and load itself.
+    """
 
     _fmt_rel_path = 'stats-api-{api_version}/{name}.json'
 
@@ -124,7 +137,7 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
     api_path: fields.Str()
     basePath: fields.Str()
     consumes: fields.List(fields.Str)
-    # models: fields.Dict(fields.Str, )
+    # models: fields.Dict(fields.Str, )  # very complex serde and *not* necessary for stashing responses in a data store
     produces: fields.List(fields.Str)
     resourcePath: fields.Str()
 
@@ -134,6 +147,10 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
     @property
     def _api_path_name_map(self):
         return {(api.path, api.description): api for api in self.apis}
+
+    @property
+    def _api_description_map(self):
+        return {api.description: api for api in self.apis}
 
     def get_api_file_object(self, **kwargs):
         path, name = kwargs['path'], kwargs['name']
@@ -147,6 +164,11 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
             path_params=path_params,
             query_params=query_params
         )
+
+    # def api(self, description: str, path: str = None):
+    #     if path is None:
+    #         return self._api_description_map[description]
+    #     return self._api_path_name_map[path, description]
 
 
 class RequestParams:

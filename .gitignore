@@ -105,3 +105,6 @@ ENV/
 .vscode/
 .idea/
 *__pycache*
+
+.var/
+.pypirc

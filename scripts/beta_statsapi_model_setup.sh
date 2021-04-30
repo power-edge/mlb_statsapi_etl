@@ -126,8 +126,8 @@ save_api_docs() {
 set_api_version_info() {
     # determine api version
     if [ -z "$API_VER" ]; then
-#        echo "API_VER NOT SET, GETTING FROM $BETA_STATSAPI_URL"
-#        API_VER=$(get_json "api_docs" | jq -r .apiVersion)
+        # echo "API_VER NOT SET, GETTING FROM $BETA_STATSAPI_URL"
+        # API_VER=$(get_json "api_docs" | jq -r .apiVersion)
         echo "API_VER NOT SET, USING DEFAULT: $DEFAULT_API_VER"
         API_VER="$DEFAULT_API_VER"
         echo "API_VER SET: $API_VER"
@@ -141,6 +141,8 @@ set_api_version_info() {
 }
 
 add_awards_to_config_doc() {
+    # the config endpoint *should* be happy to include an awards api, to give a list of awards by type
+    # note that this access pattern on the api/v1/awards is *not* allowed by the awards(.json) api model
     config_doc="$1"
     echo "$config_doc" | jq -r "{
         apiVersion: .apiVersion,
@@ -218,8 +220,8 @@ save_api_by_path() {
 ##############
 
 save_api_docs
-set_api_version_info
+set_api_version_info # only set if skipping save_api_docs in debugging
 for api_path in $(<"$STATS_API_VER_PATH" jq -r '.apis[].path[1:]'); do
     save_api_by_path "$api_path"
-    sleep 1
+    sleep 1  # curl-ing too quickly, just relax for a second!
 done

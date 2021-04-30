@@ -43,6 +43,10 @@ class LogMixin:
 
 
 class StatsAPIFileObject(LogMixin):
+    """
+    Top-level dir* for to stash each endpoint, where (file_)path will also correspond to the statsapi.mlb.com/api space.
+    As these are unique per object they map to a NoSQL keyspace as well
+    """
 
     base_url_path = r'https://statsapi.mlb.com/api'
     base_file_path = os.environ.get('STATS_API_BASE_FILE_PATH', './.var/local/mlb_statsapi')
@@ -61,9 +65,11 @@ class StatsAPIFileObject(LogMixin):
         self.operation = operation
         self.path_params, self.query_params = dict((path_params or {}).items()), dict((query_params or {}).items())
         self.path = resolve_path(self.api, self.operation, path_params, query_params)
-        self.file_path = os.path.realpath(f"{self.base_file_path}/{self.path.replace('?', '/')}.json")
+        self.keyspace = f"{self.endpoint.get_name()}/api" + self.path
+        self.file_path = os.path.realpath(f"{self.base_file_path}/{self.keyspace}.json")
         self.url = self.base_url_path + self.path  # path should start with /
-        self.obj = None
+        # noinspection PyTypeChecker
+        self.obj: dict = None
 
     def __repr__(self):
         return '{cls}(endpoint={endpoint}, api={api}, path={path})'.format(
@@ -113,11 +119,16 @@ def resolve_path(api, operation, path_params=None, query_params=None):
         param_name = path_param.name
         assert not (path_param.required and (param_name not in path_params)), 'path_param %s is required' % param_name
         if param_name in path_params:
-            arg = path_params.pop(param_name)
-            if isinstance(arg, list):
-                assert len(arg) == 1, 'Multiple %s not allowed, found %s' % (param_name, str(arg))
-                arg = arg[0]
-            fmt_path_params[param_name] = str(arg)
+            arg_val = path_params.pop(param_name)
+            if isinstance(arg_val, list):
+                assert len(arg_val) == 1, 'Multiple %s not allowed, found %s' % (param_name, str(arg_val))
+                arg_val = arg_val[0]
+            arg_val = str(arg_val)
+            if path_param.enum is not None:
+                enums = {*map(str.lower, path_param.enum)}
+                assert arg_val in enums, ("Unrecognized %s %s choice:'%s'. Please choose from [%s]" % (
+                    operation.nickname, param_name, arg_val, ', '.join(enums)))
+            fmt_path_params[param_name] = arg_val
     assert not path_params, "Unrecognized %s path_params: '%s'. Please choose from [%s]" % (
         operation.nickname, "', '".join(path_params.keys()), ", ".join([p.name for p in operation.path_params]))
 
@@ -134,13 +145,13 @@ def resolve_path(api, operation, path_params=None, query_params=None):
         assert not (query_param.required and (param_name not in query_params)), "%s query_param '%s' is required!" % (
             operation.nickname, param_name)
         if param_name in query_params:
-            arg = query_params.pop(param_name)
-            if isinstance(arg, list):
-                assert (len(arg) == 1) or query_param.allowMultiple, f'multiple {param_name} not allowed, got %s' % arg
-                arg = ','.join([*map(str, arg)])
+            arg_val = query_params.pop(param_name)
+            if isinstance(arg_val, list):
+                assert (len(arg_val) == 1) or query_param.allowMultiple, f'multiple {param_name} not allowed, got %s' % arg_val
+                arg_val = ','.join([*map(str, arg_val)])
             else:
-                arg = str(arg)
-            fmt_query_params[param_name] = arg
+                arg_val = str(arg_val)
+            fmt_query_params[param_name] = arg_val
     assert not query_params, "Unrecognized %s query_params: '%s'. Please choose from [%s]" % (
         operation.nickname, "', '".join(query_params.keys()), ", ".join([qp.name for qp in operation.query_params]))
     queries = [f'{p}={v}' for p, v in sorted(fmt_query_params.items(), key=lambda x: x[0])]
