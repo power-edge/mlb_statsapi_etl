@@ -3,7 +3,7 @@ created by nikos at 4/29/21
 """
 import unittest
 
-from .base_test_mixin import ModelTestMixin
+from .base_test_mixin import ModelTestMixin, sleep_after_get
 
 
 class TestHighLowModel(unittest.TestCase, ModelTestMixin):
@@ -13,12 +13,14 @@ class TestHighLowModel(unittest.TestCase, ModelTestMixin):
         # noinspection PyTypeChecker
         self.doSetUp(self)
 
+    @sleep_after_get()
     def test_get_highLowStats(self):
         with self.assertRaises(AssertionError):
             self.api_doc.highLowStats(path_params={'game_pk': 12345})
         fo = self.api_doc.highLowStats()
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_highLow(self):
         with self.assertRaises(AssertionError):
             self.api_doc.highLow()

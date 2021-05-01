@@ -51,7 +51,7 @@ lint: ## check style with flake8
 	flake8 mlb_statsapi tests
 
 test: ## run tests quickly with the default Python
-	pytest
+	python -m pytest -s -v tests/*
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -74,7 +74,8 @@ servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: dist ## package and upload a release
-	python -m twine upload --repository testpypi dist/*
+	python -m twine upload dist/*
+# 	python -m twine upload --repository testpypi dist/*
 # 	twine upload dist/*
 
 dist: clean ## builds source and wheel package

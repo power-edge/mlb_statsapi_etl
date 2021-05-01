@@ -6,9 +6,12 @@ the api_doc will have a different schema therefore to not apply the ModelTestMix
 import os
 import unittest
 
+from .base_test_mixin import sleep_after_get
+
 
 class TestApiDocs(unittest.TestCase):
 
+    @sleep_after_get()
     def test_ApiDocs(self):
         from mlb_statsapi.model.api_docs import ApiDocsModel as Mod
         open_path = Mod.get_open_path()

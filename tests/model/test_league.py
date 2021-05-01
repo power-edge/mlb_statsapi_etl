@@ -3,7 +3,7 @@ created by nikos at 4/29/21
 """
 import unittest
 
-from .base_test_mixin import ModelTestMixin
+from .base_test_mixin import ModelTestMixin, sleep_after_get
 
 
 class TestLeagueModel(unittest.TestCase, ModelTestMixin):
@@ -13,6 +13,7 @@ class TestLeagueModel(unittest.TestCase, ModelTestMixin):
         # noinspection PyTypeChecker
         self.doSetUp(self)
 
+    @sleep_after_get()
     def test_get_allStarFinalVote(self):
         fo = self.api_doc.allStarFinalVote(
             path_params={'leagueId': "104"},  # NL
@@ -20,6 +21,7 @@ class TestLeagueModel(unittest.TestCase, ModelTestMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_allStarWriteIns(self):
         fo = self.api_doc.allStarWriteIns(
             path_params={'leagueId': "103"},  # AL
@@ -27,6 +29,7 @@ class TestLeagueModel(unittest.TestCase, ModelTestMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_allStarsFinalVote(self):
         fo = self.api_doc.allStarsFinalVote(
             path_params={'leagueId': "104"},  # NL
@@ -34,6 +37,7 @@ class TestLeagueModel(unittest.TestCase, ModelTestMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_allStarsWriteIns(self):
         fo = self.api_doc.allStarsFinalVote(
             path_params={'leagueId': "104"},  # NL

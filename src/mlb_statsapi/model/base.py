@@ -1,23 +1,19 @@
 """
 created by nikos at 4/21/21
 """
-# import abc
 import json
 import os
-
 from serde import Model, fields, tags
 
 from .utils import LogMixin, StatsAPIFileObject
 
 
 __beta_stats_api_default_version__ = '1.0'
-__base_path__ = os.path.join(os.path.realpath(__file__).split('/mlb_statsapi')[0], 'mlb_statsapi')
+__base_path__ = os.path.join(os.path.realpath(__file__).split('/mlb_statsapi_etl/')[0], 'mlb_statsapi_etl')
 beta_stats_api_version = os.environ.get('BETA_STATS_API_VERSION', __beta_stats_api_default_version__)
 
 
 class MLBStatsAPIModel(Model):
-
-    # _fmt_rel_path: str = None
 
     apiVersion: fields.Str()
     src_url: fields.Str()
@@ -164,16 +160,3 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
             path_params=path_params,
             query_params=query_params
         )
-
-    # def api(self, description: str, path: str = None):
-    #     if path is None:
-    #         return self._api_description_map[description]
-    #     return self._api_path_name_map[path, description]
-
-
-class RequestParams:
-
-    def __init__(self, api: str):
-        self.api = api
-        self._path = {}
-        self._query = {}

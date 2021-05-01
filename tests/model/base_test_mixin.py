@@ -7,6 +7,28 @@ import json
 import os
 import unittest
 
+from functools import wraps
+from time import sleep
+
+
+def sleep_after_get(sleep_time=0.25):
+    """
+    When tests have a StatsAPIFileObject doing get(), sleep after the result to space out the requests
+    """
+    def deco(func):
+        """
+        Function decorator that provides api.path and api.description if it isn't provided.
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            sleep(sleep_time)
+            return result
+
+        return wrapper
+
+    return deco
+
 
 class ModelTestMixin:
 

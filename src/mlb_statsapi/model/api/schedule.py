@@ -26,5 +26,5 @@ class ScheduleModel(MLBStatsAPIEndpointModel):
     @api_path("/v1/schedule/{scheduleType}", name="schedule")
     def scheduleType(self, **kwargs):
         if kwargs:
-            raise NotImplemented("beta statsapi docs here are no good & will not allow you to pass the scheduleType!")
+            raise NotImplementedError("this beta statsapi docs is buggy: will not allow you to pass the scheduleType!")
         return self.get_api_file_object(**kwargs)

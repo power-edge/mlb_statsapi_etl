@@ -5,7 +5,7 @@ import json
 import unittest
 from datetime import datetime, timedelta
 
-from .base_test_mixin import GamePkMixin, ModelTestMixin
+from .base_test_mixin import GamePkMixin, ModelTestMixin, sleep_after_get
 
 
 class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
@@ -15,6 +15,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         # noinspection PyTypeChecker
         self.doSetUp(self)
 
+    @sleep_after_get()
     def test_get_liveGameV1(self):
         with self.assertRaises(AssertionError):
             self.api_doc.liveGameV1()
@@ -26,6 +27,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         assert fo.file_path != fo_tc.file_path
         assert len(json.dumps(fo.obj)) > len(json.dumps(fo_tc.obj))
 
+    @sleep_after_get()
     def test_get_liveGameDiffPatchV1(self):
         with self.assertRaises(AssertionError):
             self.api_doc.liveGameDiffPatchV1()
@@ -38,12 +40,14 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_liveTimestampv11(self):
         with self.assertRaises(AssertionError):
             self.api_doc.liveTimestampv11()
         fo = self.api_doc.liveTimestampv11(path_params=self._get_path_params())
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_currentGameStats(self):
         with self.assertRaises(AssertionError):
             self.api_doc.currentGameStats()
@@ -55,6 +59,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_getGameContextMetrics(self):
         with self.assertRaises(AssertionError):
             self.api_doc.getGameContextMetrics()
@@ -62,12 +67,14 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         fo = self.api_doc.getGameContextMetrics(path_params={'gamePk': self._get_path_params()['game_pk']})
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_getWinProbability(self):
         with self.assertRaises(AssertionError):
             self.api_doc.getWinProbability()
         fo = self.api_doc.getWinProbability(path_params={'gamePk': self._get_path_params()['game_pk']})
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_boxscore(self):
         with self.assertRaises(AssertionError):
             self.api_doc.boxscore()
@@ -82,6 +89,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         self.dump(fo_ts.get().obj)
         assert len(json.dumps(fo.obj)) > len(json.dumps(fo_ts.obj))
 
+    @sleep_after_get()
     def test_get_content(self):
         with self.assertRaises(AssertionError):
             self.api_doc.content()
@@ -91,6 +99,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_colorFeed(self):
         fo = self.api_doc.colorFeed(
             path_params=self._get_path_params(),
@@ -98,10 +107,12 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         )
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_colorTimestamps(self):
         fo = self.api_doc.colorTimestamps(path_params=self._get_path_params())
         self.dump(fo.get().obj)
 
+    @sleep_after_get()
     def test_get_linescore(self):
         fo = self.api_doc.linescore(path_params=self._get_path_params())
         self.dump(fo.get().obj)
@@ -112,6 +123,7 @@ class TestGameModel(unittest.TestCase, ModelTestMixin, GamePkMixin):
         self.dump(fo_ts.get().obj)
         assert len(json.dumps(fo.obj)) > len(json.dumps(fo_ts.obj))
 
+    @sleep_after_get()
     def test_get_playByPlay(self):
         fo = self.api_doc.playByPlay(
             path_params=self._get_path_params(),

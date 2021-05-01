@@ -4,7 +4,7 @@ created by nikos at 4/29/21
 import unittest
 from time import sleep
 
-from .base_test_mixin import ModelTestMixin
+from .base_test_mixin import ModelTestMixin, sleep_after_get
 
 
 class TestScheduleModel(unittest.TestCase, ModelTestMixin):
@@ -14,6 +14,7 @@ class TestScheduleModel(unittest.TestCase, ModelTestMixin):
         # noinspection PyTypeChecker
         self.doSetUp(self)
 
+    @sleep_after_get()
     def test_get_schedule(self):
         # this should work
         self.dump(self.api_doc.schedule(query_params={'sportId': 1}).get().obj)
@@ -54,6 +55,7 @@ class TestScheduleModel(unittest.TestCase, ModelTestMixin):
             for game in [gm for dt in sch.obj['dates'] for gm in dt['games']]
         ])
 
+    @sleep_after_get()
     def test_get_tieGames(self):
         self.dump(self.api_doc.tieGames(query_params={
             'sportId': 1,
@@ -61,6 +63,7 @@ class TestScheduleModel(unittest.TestCase, ModelTestMixin):
             # 'gameTypes': 'r'  is not working
         }).get().obj)
 
+    @sleep_after_get()
     def test_get_postseasonScheduleSeries(self):
         self.dump(self.api_doc.postseasonScheduleSeries(query_params={
             'sportId': 1,
@@ -68,6 +71,7 @@ class TestScheduleModel(unittest.TestCase, ModelTestMixin):
             'teamId': 139,
         }).get().obj)
 
+    @sleep_after_get()
     def test_get_tuneIn(self):
         self.dump(self.api_doc.tuneIn(query_params={
             'sportId': 1,
@@ -75,10 +79,11 @@ class TestScheduleModel(unittest.TestCase, ModelTestMixin):
             'teamId': 139,
         }).get().obj)
 
+    @sleep_after_get()
     def test_get_scheduleType(self):
         # todo - the docs on this are no good therefore it will raise a key error, see the method in ScheduleModel
-        with self.assertRaises(KeyError):
-            sch.dump(self.api_doc.scheduleType(
+        with self.assertRaises(NotImplementedError):
+            self.dump(self.api_doc.scheduleType(
                 query_params={
                     'sportId': 1,
                     'gameType': 'R'

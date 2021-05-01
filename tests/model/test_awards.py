@@ -3,7 +3,7 @@ created by nikos at 4/29/21
 """
 import unittest
 
-from .base_test_mixin import ModelTestMixin
+from .base_test_mixin import ModelTestMixin, sleep_after_get
 
 
 class TestAwardsModel(unittest.TestCase, ModelTestMixin):
@@ -13,12 +13,14 @@ class TestAwardsModel(unittest.TestCase, ModelTestMixin):
         # noinspection PyTypeChecker
         self.doSetUp(self)
 
+    @sleep_after_get()
     def test_get_awards(self):
         with self.assertRaises(AssertionError):
             self.api_doc.awards()
         mlb_hof = self.api_doc.awards(path_params={'awardId': r'MLBHOF'})
         self.dump(mlb_hof.get().obj)
 
+    @sleep_after_get()
     def test_get_awardRecipients(self):
         with self.assertRaises(AssertionError):
             self.api_doc.awardRecipients()
