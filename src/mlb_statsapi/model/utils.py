@@ -42,7 +42,7 @@ class LogMixin:
             return self._log
 
 
-class StatsAPIFileObject(LogMixin):
+class StatsAPIObject(LogMixin):
     """
     Top-level dir* for to stash each endpoint, where (file_)path will also correspond to the statsapi.mlb.com/api space.
     As these are unique per object they map to a NoSQL keyspace as well
@@ -59,7 +59,7 @@ class StatsAPIFileObject(LogMixin):
         path_params=None,
         query_params=None
     ):
-        super(StatsAPIFileObject, self).__init__()
+        super(StatsAPIObject, self).__init__()
         self.endpoint = endpoint
         self.api = api
         self.operation = operation

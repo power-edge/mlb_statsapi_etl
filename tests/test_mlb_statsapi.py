@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+"""
+Tests for `mlb_statsapi` package.
 
-"""Tests for `mlb_statsapi` package."""
+^ and below are from cookie cutter
+"""
 
 import pytest
 
 
 # from mlb_statsapi import mlb_statsapi
-
 
 # @pytest.fixture
 # def response():

@@ -5,7 +5,7 @@ import json
 import os
 from serde import Model, fields, tags
 
-from .utils import LogMixin, StatsAPIFileObject
+from .utils import LogMixin, StatsAPIObject
 
 
 __beta_stats_api_default_version__ = '1.0'
@@ -153,7 +153,7 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
         api = self._api_path_name_map[path, name]
         operation = api.get_operations_map[name]
         path_params, query_params = kwargs.get('path_params'), kwargs.get('query_params')
-        return StatsAPIFileObject(
+        return StatsAPIObject(
             endpoint=self,
             api=api,
             operation=operation,
