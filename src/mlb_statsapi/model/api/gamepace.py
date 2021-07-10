@@ -9,3 +9,5 @@ class GamepaceModel(MLBStatsAPIEndpointModel):
     This endpoint has no apis
     """
     pass
+
+    _methods = {}

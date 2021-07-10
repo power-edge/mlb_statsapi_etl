@@ -1,19 +1,23 @@
 """
 created by nikos at 4/21/21
 """
+import abc
 import json
 import os
 from serde import Model, fields, tags
 
-from .utils import LogMixin, StatsAPIObject
+from ..utils import base_path
+from ..utils.log import LogMixin
+from ..utils.stats_api_object import StatsAPIObject
 
 
 __beta_stats_api_default_version__ = '1.0'
-__base_path__ = os.path.join(os.path.realpath(__file__).split('/mlb_statsapi_etl/')[0], 'mlb_statsapi_etl')
 beta_stats_api_version = os.environ.get('BETA_STATS_API_VERSION', __beta_stats_api_default_version__)
 
 
 class MLBStatsAPIModel(Model):
+
+    _instance = None
 
     apiVersion: fields.Str()
     src_url: fields.Str()
@@ -26,7 +30,7 @@ class MLBStatsAPIModel(Model):
     @classmethod
     def get_open_path(cls):
         sub_path = cls._fmt_rel_path.format(name=cls.get_name(), api_version=beta_stats_api_version)
-        return f"{__base_path__}/configs/statsapi/{sub_path}"
+        return f"{base_path}/configs/statsapi/{sub_path}"
 
     @classmethod
     def read_doc_str(cls):
@@ -42,7 +46,9 @@ class MLBStatsAPIModel(Model):
 
     @classmethod
     def from_doc(cls):
-        return cls.from_json(cls.read_doc_str())
+        if cls._instance is None:
+            cls._instance = cls.from_json(cls.read_doc_str())
+        return cls._instance
 
 
 class ResponseMessage(Model):
@@ -126,7 +132,7 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
 
     These methods return a StatsAPIFileObject which is endpoint/api aware, and can get, save, and load itself.
     """
-
+    _methods = None
     _fmt_rel_path = 'stats-api-{api_version}/{name}.json'
 
     apis: fields.List(EndpointAPIModel)
@@ -160,3 +166,12 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
             path_params=path_params,
             query_params=query_params
         )
+
+    @property
+    def methods(self):
+        assert self._methods is not None, 'please define methods for %s' % self.get_name()
+        return self._methods
+
+    @abc.abstractmethod
+    def run(self, **kwargs):
+        raise NotImplementedError("define a run method")

@@ -2,23 +2,30 @@
 created by nikos at 4/26/21
 """
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class LeagueModel(MLBStatsAPIEndpointModel):
 
-    @api_path("/v1/league/{leagueId}/allStarFinalVote")
+    @configure_api
     def allStarFinalVote(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/league/{leagueId}/allStarWriteIns")
+    @configure_api
     def allStarWriteIns(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/leagues/{leagueId}/allStarFinalVote", name="allStarFinalVote")
+    @configure_api
     def allStarsFinalVote(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/leagues/{leagueId}/allStarWriteIns", name="allStarWriteIns")
+    @configure_api
     def allStarsWriteIns(self, **kwargs):
         return self.get_api_file_object(**kwargs)
+
+    _methods = {m.__name__: m for m in (
+        allStarFinalVote,
+        allStarWriteIns,
+        allStarsFinalVote,
+        allStarsWriteIns
+    )}

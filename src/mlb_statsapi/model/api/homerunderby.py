@@ -2,27 +2,35 @@
 created by nikos at 4/26/21
 """
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class HomeRunDerbyModel(MLBStatsAPIEndpointModel):
 
-    @api_path("/v1/homeRunDerby", name="homeRunDerbyBracket")
+    @configure_api
     def homeRunDerby(self, **kwargs):
         return self.ge(**kwargs)
 
-    @api_path("/v1/homeRunDerby/bracket")
+    @configure_api
     def homeRunDerbyBracket(self, **kwargs):
         return self.ge(**kwargs)
 
-    @api_path("/v1/homeRunDerby/pool")
+    @configure_api
     def homeRunDerbyPool(self, **kwargs):
         return self.ge(**kwargs)
 
-    @api_path("/v1/homeRunDerby/{gamePk}/bracket", name="homeRunDerbyBracket")
+    @configure_api
     def homeRunDerbyGameBracket(self, **kwargs):
         return self.ge(**kwargs)
 
-    @api_path("/v1/homeRunDerby/{gamePk}/pool", name="homeRunDerbyPool")
+    @configure_api
     def homeRunDerbyGamePool(self, **kwargs):
         return self.ge(**kwargs)
+
+    _methods = {m.__name__: m for m in (
+        homeRunDerby,
+        homeRunDerbyBracket,
+        homeRunDerbyPool,
+        homeRunDerbyGameBracket,
+        homeRunDerbyGamePool
+    )}

@@ -1,152 +1,197 @@
 """
 created by nikos at 4/26/21
 """
+import os.path
+
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class ConfigModel(MLBStatsAPIEndpointModel):
 
-    @api_path("/v1/awards")
+    @configure_api
     def awards(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/baseballStats")
+    @configure_api
     def baseballStats(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/eventTypes")
+    @configure_api
     def eventTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/fielderDetailTypes")
+    @configure_api
     def fielderDetailTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/gameStatus")
+    @configure_api
     def gameStatus(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/gameTypes")
+    @configure_api
     def gameTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/gamedayTypes")
+    @configure_api
     def gamedayTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/groupByTypes")
+    @configure_api
     def groupByTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/hitTrajectories")
+    @configure_api
     def hitTrajectories(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/jobTypes")
+    @configure_api
     def jobTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/languages")
+    @configure_api
     def languages(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/leagueLeaderTypes")
+    @configure_api
     def leagueLeaderTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/logicalEvents")
+    @configure_api
     def logicalEvents(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/metrics")
+    @configure_api
     def metrics(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/pitchCodes")
+    @configure_api
     def pitchCodes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/pitchTypes")
+    @configure_api
     def pitchTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/platforms")
+    @configure_api
     def platforms(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/playerStatusCodes")
+    @configure_api
     def playerStatusCodes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/positions")
+    @configure_api
     def positions(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/reviewReasons")
+    @configure_api
     def reviewReasons(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/rosterTypes")
+    @configure_api
     def rosterTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/runnerDetailTypes")
+    @configure_api
     def runnerDetailTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/scheduleEventTypes")
+    @configure_api
     def scheduleEventTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/situationCodes")
+    @configure_api
     def sitCodes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/sky")
+    @configure_api
     def sky(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/sortModifiers")
+    @configure_api
     def aggregateSortEnum(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/standingsTypes")
+    @configure_api
     def standingsTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/statFields")
+    @configure_api
     def statFields(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/statGroups")
+    @configure_api
     def statGroups(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/statTypes")
+    @configure_api
     def statTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/stats/search/config")
+    @configure_api
     def statSearchConfig(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/stats/search/groupByTypes")
+    @configure_api
     def statSearchGroupByTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/stats/search/params")
+    @configure_api
     def statSearchParams(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/stats/search/stats")
+    @configure_api
     def statSearchStats(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/transactionTypes")
+    @configure_api
     def transactionTypes(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/windDirection")
+    @configure_api
     def windDirection(self, **kwargs):
         return self.get_api_file_object(**kwargs)
+
+    @property
+    def methods(self):
+        if self._methods is None:
+            self._methods = {m.__name__: m for m in (
+                self.awards,
+                self.baseballStats,
+                self.eventTypes,
+                self.fielderDetailTypes,
+                self.gameStatus,
+                self.gameTypes,
+                self.gamedayTypes,
+                self.groupByTypes,
+                self.hitTrajectories,
+                self.jobTypes,
+                self.languages,
+                self.leagueLeaderTypes,
+                self.logicalEvents,
+                self.metrics,
+                self.pitchCodes,
+                self.pitchTypes,
+                self.platforms,
+                self.playerStatusCodes,
+                self.positions,
+                self.reviewReasons,
+                self.rosterTypes,
+                self.runnerDetailTypes,
+                self.scheduleEventTypes,
+                self.sitCodes,
+                self.sky,
+                self.aggregateSortEnum,
+                self.standingsTypes,
+                self.statFields,
+                self.statGroups,
+                self.statTypes,
+                self.statSearchConfig,
+                self.statSearchGroupByTypes,
+                self.statSearchParams,
+                self.statSearchStats,
+                self.transactionTypes,
+                self.windDirection,
+            )}
+        return self._methods

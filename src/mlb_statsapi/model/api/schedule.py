@@ -2,29 +2,37 @@
 created by nikos at 4/26/21
 """
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class ScheduleModel(MLBStatsAPIEndpointModel):
 
-    @api_path("/v1/schedule")
+    @configure_api
     def schedule(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/schedule/games/tied")
+    @configure_api
     def tieGames(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/schedule/postseason/series")
+    @configure_api
     def postseasonScheduleSeries(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/schedule/postseason/tuneIn")
+    @configure_api
     def tuneIn(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/schedule/{scheduleType}", name="schedule")
+    @configure_api
     def scheduleType(self, **kwargs):
         if kwargs:
             raise NotImplementedError("this beta statsapi docs is buggy: will not allow you to pass the scheduleType!")
         return self.get_api_file_object(**kwargs)
+
+    _methods = {m.__name__: m for m in (
+        schedule,
+        tieGames,
+        postseasonScheduleSeries,
+        tuneIn,
+        scheduleType
+    )}

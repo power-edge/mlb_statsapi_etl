@@ -1,42 +1,45 @@
-
 """
 created by nikos at 4/26/21
 """
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
-
-Y_M_D = '%Y-%m-%d'
-YMDTHMS = '%Y-%m-%dT%H:%M:%SZ'
-YYYYMMDD_HHMMSS = '%Y%m%d_%H%M%S'
-MMDDYYYY_HHMMSS = '%m%d%Y_%H%M%S'
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class PersonModel(MLBStatsAPIEndpointModel):
 
-    date_formats = {'updatedSince': YMDTHMS}
+    date_formats = {'updatedSince': '%Y-%m-%dT%H:%M:%SZ'}
 
-    @api_path("/v1/people")
-    def person(self, **kwargs):
+    @configure_api
+    def award(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/people/changes", name="currentGameStats")
+    @configure_api
     def changes(self, **kwargs):
         """badly misnamed in the api_docs^ +this duplicates the api.description or api.operations[].nickname space"""
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/people/freeAgents")
-    def freeAgents(self, **kwargs):
-        return self.get_api_file_object(**kwargs)
-
-    @api_path("/v1/people/{personId}/awards")
-    def award(self, **kwargs):
-        return self.get_api_file_object(**kwargs)
-
-    @api_path("/v1/people/{personId}/stats/game/current")
+    @configure_api
     def currentGameStats(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/people/{personId}/stats/game/{gamePk}", name="currentGameStats")
+    @configure_api
+    def freeAgents(self, **kwargs):
+        return self.get_api_file_object(**kwargs)
+
+    @configure_api
     def gameStats(self, **kwargs):
         """also duplicates the api.description or api.operations[].nickname space"""
         return self.get_api_file_object(**kwargs)
+
+    @configure_api
+    def person(self, **kwargs):
+        return self.get_api_file_object(**kwargs)
+
+    _methods = {m.__name__: m for m in (
+        award,
+        changes,
+        currentGameStats,
+        freeAgents,
+        gameStats,
+        person
+    )}

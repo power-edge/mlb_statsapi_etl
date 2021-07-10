@@ -1,46 +1,18 @@
 """
-created by nikos at 4/25/21
+created by nikos at 5/2/21
 """
-import logging
 import json
 import os
-import requests
-# import stat
-
 from functools import wraps
 
+import boto3
+import requests
+import tarfile
+import zipfile
 
-root = logging.getLogger('mlb_statsapi')
-root.setLevel(logging.DEBUG)
-console = logging.StreamHandler()
-logging_format = ' '.join([
-    '[%(asctime)s]',
-    '{%(filename)s:%(lineno)d}',
-    '%(name)s',
-    '%(processName)s.%(threadName)s',
-    '%(levelname)s',
-    '-',
-    '%(message)s'
-])
-bf = logging.Formatter(logging_format)
-console.setFormatter(bf)
-root.addHandler(console)
-root.propagate = os.environ.get('AIRFLOW_CTX_EXECUTION_DATE') is None
-
-
-class LogMixin:
-
-    @property
-    def log(self):
-        try:
-            return self._log
-        except AttributeError:
-            # noinspection PyAttributeOutsideInit
-            self._log = logging.root.getChild(
-                self.__class__.__module__ + '.' + self.__class__.__name__
-            )
-            return self._log
-
+from mlb_statsapi import ENV
+from .log import LogMixin
+from .endpoint_config import EndpointConfig
 
 class StatsAPIObject(LogMixin):
     """
@@ -49,7 +21,8 @@ class StatsAPIObject(LogMixin):
     """
 
     base_url_path = r'https://statsapi.mlb.com/api'
-    base_file_path = os.environ.get('STATS_API_BASE_FILE_PATH', './.var/local/mlb_statsapi')
+    base_file_path = os.environ.get('MLB_STATSAPI__BASE_FILE_PATH', './.var/local/mlb_statsapi')
+    bucket = f'mlb-statsapi-{ENV}'
 
     def __init__(
         self,
@@ -97,13 +70,36 @@ class StatsAPIObject(LogMixin):
         self.log.debug("loaded %s from %s" % (self, self.file_path))
         return self
 
+    def prefix(self, ext='json.tar.gz'):
+        return f"{self.keyspace}.{ext}"
+
+    def upload_file(self, client=None):
+        kwargs = {
+            'Filename': self.tar_gz_path,
+            'Bucket': self.bucket,
+            'Key': self.prefix('json.tar.gz')
+        }
+        self.log.info("upload_file: %s" % json.dumps(kwargs))
+        res = (client or boto3.client('s3')).upload_file(**kwargs)
+        self.log.info("upload_file result: %s" % str(res))
+
     def save(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):
             os.makedirs(os.path.dirname(self.file_path))
         with open(f"{self.file_path}", 'w') as f:
             f.write(json.dumps(self.obj))
-        self.log.debug("saved %s to %s" % (self, self.file_path))
+        self.log.info("saved %s to %s" % (self, self.file_path))
         # os.chmod(self.file_path, stat.S_IREAD)
+
+    def tar(self):
+        tf = tarfile.open(self.tar_gz_path, mode="w:gz")
+        tf.add(self.file_path)
+        tf.close()
+        self.log.info(f"gzipped {self.tar_gz_path}")
+
+    @property
+    def tar_gz_path(self):
+        return f"{self.file_path}.tar.gz"
 
 
 def resolve_path(api, operation, path_params=None, query_params=None):
@@ -161,29 +157,28 @@ def resolve_path(api, operation, path_params=None, query_params=None):
     return path
 
 
-def api_path(path, name=None):
+def configure_api(func):
     """
     A decorator that adds the path (.apis[].path) to kwargs, and optionally sets another name to look for under either
      apis[].description or apis[].operations[].nickname, which should match. When name does not match the function,
      consider this an indication of misnaming in beta-statsapi.
     """
-    def deco(func):
-        """
-        Function decorator that provides api.path and api.description if it isn't provided.
-        """
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            arg_path = 'path'
-            func_params = func.__code__.co_varnames
-            path_in_args = arg_path in func_params and func_params.index(arg_path) < len(args)
-            path_in_kwargs = arg_path in kwargs
-            kwargs['name'] = name or func.__name__
-            if path_in_kwargs or path_in_args:
-                return func(*args, **kwargs)
-            else:
-                kwargs[arg_path] = path
-                return func(*args, **kwargs)
+    arg_path = 'path'
+    endpoint_name = func.__module__.split('.')[-1]
+    api_name = func.__name__
+    func_params = func.__code__.co_varnames
+    print(f"configure_api: {endpoint_name=}, {api_name=}")
+    func_cfg = EndpointConfig().config[endpoint_name][api_name]
 
-        return wrapper
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        path_in_args = arg_path in func_params and func_params.index(arg_path) < len(args)
+        path_in_kwargs = arg_path in kwargs
+        kwargs['name'] = func_cfg.get('name', api_name)
+        if path_in_kwargs or path_in_args:
+            return func(*args, **kwargs)
+        else:
+            kwargs[arg_path] = func_cfg['path']
+            return func(*args, **kwargs)
 
-    return deco
+    return wrapper

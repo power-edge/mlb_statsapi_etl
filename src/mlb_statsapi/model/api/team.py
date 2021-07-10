@@ -2,16 +2,16 @@
 created by nikos at 4/26/21
 """
 from ..base import MLBStatsAPIEndpointModel
-from ..utils import api_path
+from mlb_statsapi.utils.stats_api_object import configure_api
 
 
 class TeamModel(MLBStatsAPIEndpointModel):
 
-    @api_path("/v1/teams")
+    @configure_api
     def teams(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/affiliates")
+    @configure_api
     def affiliates(self, **kwargs):
         # return self.get_api_file_object(**kwargs)
         raise NotImplementedError("""TODO - fix https://beta-statsapi.mlb.com/api/api_docs/stats-api/team affiliates api
@@ -23,7 +23,7 @@ class TeamModel(MLBStatsAPIEndpointModel):
         Note: teamId as a query_param does not work either.
         """)
 
-    @api_path("/v1/teams/history")
+    @configure_api
     def allTeams(self, **kwargs):
         """Nonfunctional and duplicated: This same data is available on a teamId basis at the history() api"""
         # return self.get_api_file_object(**kwargs)
@@ -33,37 +33,50 @@ class TeamModel(MLBStatsAPIEndpointModel):
                     "path": "/v1/teams/affiliates" will always return `HTTP Status 404 – Not Found`
                 Reproduce: https://statsapi.mlb.com/api/v1/teams/history/147?sportId=1 is 404
                    whereas https://statsapi.mlb.com/api/v1/teams/147/history?sportId=1 does return the payload
-        Note: teamId as a query_param does not work either.
-                """)
+        Note: teamId as a query_param does not work either.""")
 
-    @api_path("/v1/teams/stats")
+    @configure_api
     def stats(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/stats/leaders", name="leaders")
+    @configure_api
     def statsLeaders(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/affiliates", name='affiliates')
+    @configure_api
     def teamAffiliates(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/alumni")
+    @configure_api
     def alumni(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/coaches")
+    @configure_api
     def coaches(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/history", name="allTeams")
+    @configure_api
     def history(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/leaders")
+    @configure_api
     def leaders(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    @api_path("/v1/teams/{teamId}/roster/{rosterType}")
+    @configure_api
     def roster(self, **kwargs):
         return self.get_api_file_object(**kwargs)
+
+    _methods = {m.__name__: m for m in (
+        teams,
+        # affiliates,
+        # allTeams,
+        stats,
+        statsLeaders,
+        teamAffiliates,
+        alumni,
+        coaches,
+        history,
+        leaders,
+        roster
+    )}

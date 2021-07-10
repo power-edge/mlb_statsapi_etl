@@ -52,7 +52,7 @@ class StatsAPI:
     Team = TeamModel.from_doc()
 
     ALL = [
-        # ApiDocs,
+        ApiDocs,
         Awards,
         Broadcast,
         Conference,

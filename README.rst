@@ -4,7 +4,7 @@ MLB StatsAPI ETL App
 
 
 .. image:: https://img.shields.io/pypi/v/mlb_statsapi.svg
-        :target: https://pypi.python.org/pypi/mlb_statsapi
+        :target: https://pypi.python.org/pypi/mlb_statsapi_etl
 
 .. image:: https://img.shields.io/travis/nikolauspschuetz/mlb_statsapi.svg
         :target: https://travis-ci.com/nikolauspschuetz/mlb_statsapi
@@ -20,11 +20,11 @@ MLB StatsAPI ETL App
 
 
 
-This project generates an endpoint.event interface based on the MLB StatsAPI model
+Wrapper for the MLB StatsAPI as defined by the beta-statsapi (https://beta-statsapi.mlb.com/docs/)
 
 
 * Free software: Apache Software License 2.0
-* Documentation: https://mlb-statsapi.readthedocs.io.
+* Documentation (todo): https://mlb-statsapi-etl.readthedocs.io.
 
 
 Features

@@ -13,7 +13,9 @@ with open('HISTORY.rst') as history_file:
 install_requires = [
     'requests==2.25.1',
     'serde==0.8.1',
-    'numpy==1.20.2'
+    'psycopg2-binary>=2.7.4',
+    'numpy==1.20.2',
+    'pandas==1.2.4'
 ]
 
 setup_requirements = ['pytest-runner', ]

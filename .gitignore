@@ -108,3 +108,5 @@ ENV/
 
 .var/
 .pypirc
+
+/workflow/logs/
