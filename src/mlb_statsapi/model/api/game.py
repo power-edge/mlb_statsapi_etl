@@ -1,6 +1,8 @@
 """
 created by nikos at 4/26/21
 """
+import datetime
+
 from ..base import MLBStatsAPIEndpointModel
 from mlb_statsapi.utils.stats_api_object import configure_api
 
@@ -82,8 +84,6 @@ class GameModel(MLBStatsAPIEndpointModel):
         playByPlay
     )}
 
-    def run(self, **kwargs):
-        """
-        To run the GameModel
-        """
-        pass
+    @property
+    def now_timestamp(self):
+        return datetime.datetime.now().strftime(YYYYMMDD_HHMMSS)

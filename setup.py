@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 
 """The setup script."""
+import setuptools
 from setuptools import setup
 from src.mlb_statsapi import __author__, __email__, __version__
 
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
+# with open('README.rst') as readme_file:
+#     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+# with open('HISTORY.rst') as history_file:
+#     history = history_file.read()
 
 install_requires = [
     'requests==2.25.1',
     'serde==0.8.1',
-    'psycopg2-binary>=2.7.4',
-    'numpy==1.20.2',
-    'pandas==1.2.4'
+    "pytz==2021.1",
+    "PyYAML==5.4.1"
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -46,8 +46,7 @@ setup(
     # },
     install_requires=install_requires,
     license="Apache Software License 2.0",
-    long_description=readme + '\n\n' + history,
-    package_data={"configs": ['configs/statsapi/**']},
+    # long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='mlb_statsapi',
     # packages=find_packages(include=['mlb_statsapi', 'mlb_statsapi.*']),
@@ -57,4 +56,12 @@ setup(
     url='https://github.com/power-edge/mlb_statsapi_etl',
     version=__version__,
     zip_safe=False,
+    packages=setuptools.find_packages("src"),
+    package_data={"configs": [
+        'configs/statsapi/**',
+        "configs/endpoint-model.yaml"
+    ]},
+    package_dir={
+        "": "src"
+    }
 )

@@ -21,6 +21,4 @@ class AwardsModel(MLBStatsAPIEndpointModel):
     )}
 
     def run(self, **kwargs):
-
         pass
-

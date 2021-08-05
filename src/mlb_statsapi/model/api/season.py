@@ -24,3 +24,19 @@ class SeasonModel(MLBStatsAPIEndpointModel):
         season,
         seasons
     )}
+
+    def run(self, **kwargs):
+        """
+        To run the SeasonModel
+        """
+        import boto3
+        methods = kwargs['methods']
+        game_pk = kwargs['game_pk']
+        start_timestamp = kwargs['start_timestamp']
+        end_timestamp = kwargs['end_timestamp']
+        self.log(f'run {game_pk=}, {start_timestamp=}, {end_timestamp=}')
+        s3 = boto3.client('s3')
+        liveTimestampv11 = self.liveTimestampv11(path_params={"game_pk": game_pk}).get()
+        timestamps = {*liveTimestampv11.obj}
+
+        # while

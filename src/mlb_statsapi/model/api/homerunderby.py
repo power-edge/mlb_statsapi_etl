@@ -9,23 +9,23 @@ class HomeRunDerbyModel(MLBStatsAPIEndpointModel):
 
     @configure_api
     def homeRunDerby(self, **kwargs):
-        return self.ge(**kwargs)
+        return self.get_api_file_object(**kwargs)
 
     @configure_api
     def homeRunDerbyBracket(self, **kwargs):
-        return self.ge(**kwargs)
+        return self.get_api_file_object(**kwargs)
 
     @configure_api
     def homeRunDerbyPool(self, **kwargs):
-        return self.ge(**kwargs)
+        return self.get_api_file_object(**kwargs)
 
     @configure_api
     def homeRunDerbyGameBracket(self, **kwargs):
-        return self.ge(**kwargs)
+        return self.get_api_file_object(**kwargs)
 
     @configure_api
     def homeRunDerbyGamePool(self, **kwargs):
-        return self.ge(**kwargs)
+        return self.get_api_file_object(**kwargs)
 
     _methods = {m.__name__: m for m in (
         homeRunDerby,

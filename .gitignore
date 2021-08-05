@@ -110,3 +110,5 @@ ENV/
 .pypirc
 
 /workflow/logs/
+
+/.terraform/

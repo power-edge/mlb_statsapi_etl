@@ -24,5 +24,25 @@ class TestStreaksModel(unittest.TestCase, ModelTestMixin):
         self.dump(self.api_doc.highLowStats().get().obj)
 
 
+from mlb_statsapi.model import StatsAPI
+
+sch = StatsAPI.Schedule.schedule(
+    query_params={
+        "date": "2021-05-01",
+        "sportId": 1
+    }
+)
+sch.get()
+
+game = StatsAPI.Game.liveGameV1(path_params={'game_pk': 12345})
+
+
+
+
+schedule = StatsAPI.Schedule.schedule(
+    query_params={"date": "2021-05-01", "
+        game = StatsAPI.Game.liveGameV1(path_params={'game_pk': 12345})
+
+
 if __name__ == '__main__':
     unittest.main()

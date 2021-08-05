@@ -7,5 +7,6 @@ __version__ = '0.1.0.dev2'
 
 os.environ['AWS_PROFILE'] = 'nikolauspschuetz'  # todo
 
-ENV = os.environ.get('ENV', 'dev')
-REGION = os.environ.get('REGION', 'us-west-1')
+REGION = os.environ.get('REGION', 'us-west-2')
+ENV = os.environ.get('ENV', f'mlb-statsapi-{REGION}')
+DATA_BUCKET = os.environ.get("DATA_BUCKET", f"mlb-statsapi-etl-{REGION}-data")

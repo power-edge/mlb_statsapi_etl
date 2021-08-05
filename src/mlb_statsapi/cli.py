@@ -1,34 +1,71 @@
 """Console script for mlb_statsapi."""
 import argparse
+import json
 import os.path
 import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-sys.path.append(path)
 
 from mlb_statsapi.model import StatsAPI
 
+class Arguments:
 
-def app_subparsers(parser):
-    subparsers = parser.add_subparsers(help='application to run', dest='app')
-    app_parsers = {}
-    for api in StatsAPI.ALL[1:]:  # skip api_docs
-        name = api.get_name()
-        app_parsers[name] = subparsers.add_parser(name)
-
-        app_parsers[name].add_argument(
-            '-m',
-            '--methods',
-            nargs='+',
-            default=[*api.methods.keys()],
-            help='StatsAPI Model method filter. default is all.'
+    @staticmethod
+    def date(add_argument: callable, required: bool = False):
+        from mlb_statsapi.utils import get_current_mlb_date
+        add_argument(
+            '--date',
+            type=str,
+            required=required,
+            default=str(get_current_mlb_date())
         )
 
-    app_parsers['game'].add_argument(
-        '-pk',
-        '--game_pk',
-        type=int,
-        required=True
-    )
+    @staticmethod
+    def gamePk(add_argument: callable, required: bool = True):
+        add_argument(
+            '--gamePk',
+            type=int,
+            required=required
+        )
+
+    @staticmethod
+    def startTime(add_argument: callable, required: bool = True):
+        add_argument(
+            '--startTime',
+            type=str,
+            required=required
+        )
+
+    @staticmethod
+    def sportId(add_argument: callable, required: bool = False):
+        add_argument(
+            '--sportId',
+            type=int,
+            required=required,
+            default=1
+        )
+
+
+def add_subparsers(parser):
+    subparsers = parser.add_subparsers(help='application to run', dest='app', required=True)
+    app_parsers = {}
+    for app in Apps:  # skip api_docs
+        name = app.__name__
+        app_parsers[name] = subparsers.add_parser(name)
+
+        # app_parsers[name].add_argument(
+        #     '-m',
+        #     '--methods',
+        #     nargs='+',
+        #     default=[*api.methods.keys()],
+        #     help='StatsAPI Model method filter. default is all.'
+        # )
+
+    Arguments.date(app_parsers['Schedule'].add_argument, True)
+    Arguments.sportId(app_parsers['Schedule'].add_argument)
+
+    Arguments.date(app_parsers['Game'].add_argument, True)
+    Arguments.gamePk(app_parsers['Game'].add_argument)
+    Arguments.startTime(app_parsers['Game'].add_argument)
+    Arguments.sportId(app_parsers['Game'].add_argument)
 
     return subparsers
 
@@ -36,23 +73,45 @@ def app_subparsers(parser):
 def parse_args():
     """Console script for mlb_statsapi."""
     parser = argparse.ArgumentParser()
+    parser.add_argument('--indent', default=2, required=False, type=int)
 
-    subparsers = app_subparsers(parser)
+    subparsers = add_subparsers(parser)
 
     return parser.parse_args()
 
 
+def Game(args: argparse.Namespace):
+    from mlb_statsapi import apps
+    return apps.Game.run(
+        date=args.date,
+        gamePk=args.gamePk,
+        startTime=args.startTime,
+        sportId=args.sportId
+    )
+
+
+def Schedule(args: argparse.Namespace):
+    from mlb_statsapi import apps
+    return apps.Schedule.run(
+        sportId=args.sportId,
+        date=args.date
+    )
+
+
+Apps = [
+    Game,
+    Schedule
+]
+
+
 def main():
-    from mlb_statsapi.apps import Apps
     args = parse_args()
-    print("args: %s" % args)
-    return {
-        'config': Apps.Config,
-    }[args.app]().main(args)
+    # print("args: %s" % args)
+    print(json.dumps({
+        'Game': Game,
+        'Schedule': Schedule
+    }[args.app](args), indent=args.indent))
 
 
 if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
-
-
-# boxscore,colorFeed,colorTimestamps,content,currentGameStats,getGameContextMetrics,getWinProbability,linescore,liveGameDiffPatchV1,liveGameV1,liveTimestampv11,playByPlay
+    sys.exit(main())

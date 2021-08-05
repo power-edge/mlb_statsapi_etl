@@ -9,8 +9,9 @@ import boto3
 import requests
 import tarfile
 import zipfile
+import gzip
 
-from mlb_statsapi import ENV
+from mlb_statsapi import DATA_BUCKET
 from .log import LogMixin
 from .endpoint_config import EndpointConfig
 
@@ -22,7 +23,8 @@ class StatsAPIObject(LogMixin):
 
     base_url_path = r'https://statsapi.mlb.com/api'
     base_file_path = os.environ.get('MLB_STATSAPI__BASE_FILE_PATH', './.var/local/mlb_statsapi')
-    bucket = f'mlb-statsapi-{ENV}'
+
+    bucket = DATA_BUCKET
 
     def __init__(
         self,
@@ -54,7 +56,8 @@ class StatsAPIObject(LogMixin):
 
     @property
     def exists(self):
-        return os.path.isfile(self.file_path)
+        exists_is_true = os.path.isfile(self.file_path)
+        return exists_is_true
 
     def get(self):
         response = requests.get(self.url, headers={'Accept-Encoding': 'gzip'})
@@ -64,24 +67,52 @@ class StatsAPIObject(LogMixin):
         self.log.debug("got %s from %s" % (self, self.url))
         return self
 
-    def load(self):
-        with open(self.file_path, 'r') as f:
-            self.obj = json.load(f)
-        self.log.debug("loaded %s from %s" % (self, self.file_path))
+    def load(self, ext='json.gz'):
+        if ext == 'json':
+            with open(self.file_path, 'r') as f:
+                self.obj = json.load(f)
+            self.log.info("loaded %s from %s" % (self, self.file_path))
+        elif ext == 'json.gz':
+            with gzip.open(self.gz_path, 'r') as f:  # 4. gzip
+                self.obj = json.loads(f.read().decode('utf-8'))
+            self.log.info("loaded %s from %s" % (self, self.gz_path))
+        else:
+            raise NotImplementedError("reading from %s is not supported" % ext)
         return self
 
-    def prefix(self, ext='json.tar.gz'):
+    def prefix(self, ext='json.gz'):
         return f"{self.keyspace}.{ext}"
 
-    def upload_file(self, client=None):
+    def upload_file(self, ext='json.gz', client=None):
         kwargs = {
-            'Filename': self.tar_gz_path,
+            'Filename': {
+                'json': self.file_path,
+                'json.gz': self.gz_path,
+                'json.tar.gz': self.tar_gz_path
+            }[ext],
             'Bucket': self.bucket,
-            'Key': self.prefix('json.tar.gz')
+            'Key': self.prefix(ext)
         }
         self.log.info("upload_file: %s" % json.dumps(kwargs))
         res = (client or boto3.client('s3')).upload_file(**kwargs)
         self.log.info("upload_file result: %s" % str(res))
+
+    def dumps(self, indent=0) -> str:
+        return json.dumps(self.obj, indent=indent)
+
+    def download_file(self, ext='json.gz', client=None):
+        kwargs = {
+            'Filename': {
+                'json': self.file_path,
+                'json.gz': self.gz_path,
+                'json.tar.gz': self.tar_gz_path
+            }[ext],
+            'Bucket': self.bucket,
+            'Key': self.prefix(ext)
+        }
+        self.log.info("download_file: %s" % json.dumps(kwargs))
+        res = (client or boto3.client('s3')).download_file(**kwargs)
+        self.log.info("download_file result: %s" % str(res))
 
     def save(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):
@@ -97,9 +128,20 @@ class StatsAPIObject(LogMixin):
         tf.close()
         self.log.info(f"gzipped {self.tar_gz_path}")
 
+    def gzip(self):
+        if not os.path.isdir(os.path.dirname(self.file_path)):
+            os.makedirs(os.path.dirname(self.file_path))
+        with gzip.open(self.gz_path, 'wb') as f:
+            f.write(json.dumps(self.obj).encode('utf-8'))
+        self.log.info("gzipped %s to %s" % (self, self.gz_path))
+
     @property
     def tar_gz_path(self):
         return f"{self.file_path}.tar.gz"
+
+    @property
+    def gz_path(self):
+        return f"{self.file_path}.gz"
 
 
 def resolve_path(api, operation, path_params=None, query_params=None):
@@ -167,7 +209,6 @@ def configure_api(func):
     endpoint_name = func.__module__.split('.')[-1]
     api_name = func.__name__
     func_params = func.__code__.co_varnames
-    print(f"configure_api: {endpoint_name=}, {api_name=}")
     func_cfg = EndpointConfig().config[endpoint_name][api_name]
 
     @wraps(func)
