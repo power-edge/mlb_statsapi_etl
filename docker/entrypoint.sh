@@ -8,7 +8,6 @@ if [ ! "$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI" = "" ]; then
   export AWS_CONTAINER_CREDENTIALS
 fi
 
-
 if [ "$1" = 'python' ]; then
     exec "$@"
 fi

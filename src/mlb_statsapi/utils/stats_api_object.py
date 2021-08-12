@@ -84,6 +84,7 @@ class StatsAPIObject(LogMixin):
         return f"{self.keyspace}.{ext}"
 
     def upload_file(self, ext='json.gz', client=None):
+        from mlb_statsapi.utils.aws import S3
         kwargs = {
             'Filename': {
                 'json': self.file_path,
@@ -93,9 +94,7 @@ class StatsAPIObject(LogMixin):
             'Bucket': self.bucket,
             'Key': self.prefix(ext)
         }
-        self.log.info("upload_file: %s" % json.dumps(kwargs))
-        res = (client or boto3.client('s3')).upload_file(**kwargs)
-        self.log.info("upload_file result: %s" % str(res))
+        return S3(client or boto3.client('s3')).upload_file(**kwargs)
 
     def dumps(self, indent=0) -> str:
         return json.dumps(self.obj, indent=indent)
@@ -110,9 +109,7 @@ class StatsAPIObject(LogMixin):
             'Bucket': self.bucket,
             'Key': self.prefix(ext)
         }
-        self.log.info("download_file: %s" % json.dumps(kwargs))
-        res = (client or boto3.client('s3')).download_file(**kwargs)
-        self.log.info("download_file result: %s" % str(res))
+        return S3(client or boto3.client('s3')).download_file(**kwargs)
 
     def save(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):

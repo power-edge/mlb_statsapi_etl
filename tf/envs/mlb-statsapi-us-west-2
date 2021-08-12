@@ -4,13 +4,16 @@ aws_region = "us-west-2"
 aws_account = 623650261134
 project_name = "mlb-statsapi-etl"
 
-vpc = "10.42.0.0/16"
-sn_prv_a_00 = "10.42.0.0/24"
-sn_prv_b_00 = "10.42.1.0/24"
-sn_prv_d_00 = "10.42.2.0/24"
-sn_pub_a_00 = "10.42.3.0/24"
-sn_pub_b_00 = "10.42.4.0/24"
-sn_pub_d_00 = "10.42.5.0/24"
+vpc_cidr_block = "10.42.0.0/16"
+sn_prv_a0_cidr_block = "10.42.0.0/24"
+sn_prv_b0_cidr_block = "10.42.1.0/24"
+sn_pub_a0_cidr_block = "10.42.3.0/24"
+sn_pub_b0_cidr_block = "10.42.4.0/24"
 
-run-ecr-mlb-statsapi-etl-build = "2021-08-05T04:58:53Z"
-run-ecr-mlb-statsapi-etl-push = "2021-08-05T05:18:55Z"
+run-ecr-mlb-statsapi-etl-build = ""
+run-ecr-mlb-statsapi-etl-push = ""
+
+always_run-lambda-layer-mlb-statsapi = "2021-08-10T22:02:24Z"
+
+always_run-lambda-sf-gameday-state-date-in-season = "2021-08-12T01:34:49Z"
+always_run-lambda-sf-gameday-state-set-scheduled-games = "2021-08-12T02:46:18Z"

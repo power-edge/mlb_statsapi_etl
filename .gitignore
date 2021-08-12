@@ -111,4 +111,5 @@ ENV/
 
 /workflow/logs/
 
-/.terraform/
+/.terraform**
+/tf/local-exec/lambda-**/**.zip

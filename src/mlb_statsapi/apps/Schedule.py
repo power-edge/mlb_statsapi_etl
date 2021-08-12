@@ -3,6 +3,7 @@ created by nikos at 8/4/21
 """
 import json
 import os.path
+import traceback
 
 from time import sleep
 
@@ -20,7 +21,6 @@ def refresh(sch: StatsAPIObject, date: str) -> bool:
     if sch.obj is None:
         return True
     elif not len(sch.obj):
-        print(f"")
         return False
     abstractGameStates = {game["status"]["abstractGameState"] for game in get_games(sch, date)}
     Preview, Live, Final, Other = 'Preview', 'Live', 'Final', 'Other'
@@ -51,10 +51,14 @@ def run(**kwargs):
     sportId = kwargs["sportId"]
     date = kwargs["date"]
     sch = StatsAPI.Schedule.schedule(query_params={"sportId": sportId, "date": date})
-    # while refresh(sch, date):
-    #     old = sch.dumps()
-    #     new = sch.get().dumps()
-    #     if old != new:
-    #         sch.gzip()
-    #         sch.upload_file()
-    return sch.get().obj
+    while refresh(sch, date):
+        old = sch.dumps()
+        new = sch.get().dumps()
+        if old != new:
+            sch.gzip()
+            sch.upload_file()
+    return {
+        "date": date,
+        "sportId": sportId,
+        "size": os.path.getsize(sch.gz_path)
+    }

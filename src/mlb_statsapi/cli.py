@@ -1,10 +1,38 @@
 """Console script for mlb_statsapi."""
 import argparse
+import boto3
 import json
 import os.path
 import sys
+import traceback
 
 from mlb_statsapi.model import StatsAPI
+from mlb_statsapi.utils.aws import StepFunctions
+
+
+AWS_STEP_FUNCTIONS_TASK_TOKEN = os.environ.get("AWS_STEP_FUNCTIONS_TASK_TOKEN")
+
+
+def get_stepfunctions_client() -> StepFunctions:
+    return StepFunctions(boto3.client("stepfunctions", region_name=os.environ.get('AWS_REGION', 'AWS_DEFAULT_REGION')))
+
+
+def runTask(run, **kwargs):
+    try:
+        res = run(**kwargs)
+        get_stepfunctions_client().send_task_success(
+            taskToken=AWS_STEP_FUNCTIONS_TASK_TOKEN,
+            output=json.dumps(res)
+        )
+        return res
+    except Exception as e:
+        get_stepfunctions_client().send_task_failure(
+            taskToken=AWS_STEP_FUNCTIONS_TASK_TOKEN,
+            error='States.TaskFailed',
+            cause=traceback.format_exc()
+        )
+        raise e
+
 
 class Arguments:
 
@@ -73,7 +101,7 @@ def add_subparsers(parser):
 def parse_args():
     """Console script for mlb_statsapi."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--indent', default=2, required=False, type=int)
+    parser.add_argument('--indent', default=None, required=False, type=int)
 
     subparsers = add_subparsers(parser)
 
@@ -82,20 +110,28 @@ def parse_args():
 
 def Game(args: argparse.Namespace):
     from mlb_statsapi import apps
-    return apps.Game.run(
+    kwargs = dict(
         date=args.date,
         gamePk=args.gamePk,
         startTime=args.startTime,
         sportId=args.sportId
     )
+    if AWS_STEP_FUNCTIONS_TASK_TOKEN is None:
+        return apps.Game.run(**kwargs)
+    else:
+        return runTask(apps.Game.run, **kwargs)
 
 
 def Schedule(args: argparse.Namespace):
     from mlb_statsapi import apps
-    return apps.Schedule.run(
+    kwargs = dict(
         sportId=args.sportId,
         date=args.date
     )
+    if AWS_STEP_FUNCTIONS_TASK_TOKEN is None:
+        return apps.Schedule.run(**kwargs)
+    else:
+        return runTask(apps.Schedule.run, **kwargs)
 
 
 Apps = [

@@ -6,7 +6,7 @@ import json
 import os
 from serde import Model, fields, tags
 
-from ..utils import base_path
+from ..utils import CONFIGS_PATH
 from ..utils.log import LogMixin
 from ..utils.stats_api_object import StatsAPIObject
 
@@ -30,7 +30,7 @@ class MLBStatsAPIModel(Model):
     @classmethod
     def get_open_path(cls):
         sub_path = cls._fmt_rel_path.format(name=cls.get_name(), api_version=beta_stats_api_version)
-        return f"{base_path}/configs/statsapi/{sub_path}"
+        return f"{CONFIGS_PATH}/statsapi/{sub_path}"
 
     @classmethod
     def read_doc_str(cls):

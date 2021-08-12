@@ -9,6 +9,8 @@ variable "build_version" {}
 
 variable "mlb_statsapi_etl_image-repository_name" {}
 
+variable "mlb_statsapi_s3_data_bucket_service_policy-arn" {}
+
 
 locals {
   repository_name = "mlb-statsapi-etl"
@@ -32,15 +34,16 @@ resource "aws_ecs_cluster" "ecs_cluster_mlb_statsapi_etl" {
   }
 }
 
+output "ecs_cluster_mlb_statsapi_etl-arn" {
+  value = aws_ecs_cluster.ecs_cluster_mlb_statsapi_etl.arn
+}
+
 resource "aws_cloudwatch_log_group" "ecs_cluster_mlb_statsapi_etl-Logs" {
   //noinspection HILUnresolvedReference
   name = "/ecs/${aws_ecs_cluster.ecs_cluster_mlb_statsapi_etl.name}"
   retention_in_days = 7
 }
 
-data "aws_iam_policy" "AmazonECSTaskExecutionRolePolicy" {
-  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
 
 resource "aws_iam_role" "ecs_mlb_statsapi_etl-taskRole" {
   name = "tf-ecs_mlb_statsapi_etl-taskRole-${var.aws_region}"
@@ -57,6 +60,31 @@ resource "aws_iam_role" "ecs_mlb_statsapi_etl-taskRole" {
     ]
   })
 }
+
+
+resource "aws_iam_role_policy_attachment" "attach-ecs_mlb_statsapi_etl-taskRole__mlb_statsapi_s3_data_bucket_service_policy" {
+  policy_arn = var.mlb_statsapi_s3_data_bucket_service_policy-arn
+  role = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.name
+  depends_on = [
+    aws_iam_role.ecs_mlb_statsapi_etl-taskRole
+  ]
+}
+
+
+data "aws_iam_policy" "AmazonECSTaskExecutionRolePolicy" {
+  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+
+resource "aws_iam_role_policy_attachment" "attachAmazonECSTaskExecutionRolePolicy" {
+  policy_arn = data.aws_iam_policy.AmazonECSTaskExecutionRolePolicy.arn
+  role = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.name
+  depends_on = [
+    data.aws_iam_policy.AmazonECSTaskExecutionRolePolicy,
+    aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole
+  ]
+}
+
 
 resource "aws_iam_role" "ecs_mlb_statsapi_etl-taskExecutionRole" {
   name = "tf-ecs_mlb_statsapi_etl-taskExecutionRole-${var.aws_region}"
@@ -90,15 +118,6 @@ resource "aws_iam_policy" "ecs_mlb_statsapi_etl-taskPolicy-states" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attachAmazonECSTaskExecutionRolePolicy" {
-  policy_arn = data.aws_iam_policy.AmazonECSTaskExecutionRolePolicy.arn
-  role = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.name
-  depends_on = [
-    data.aws_iam_policy.AmazonECSTaskExecutionRolePolicy,
-    aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole
-  ]
-}
-
 
 resource "aws_iam_role_policy_attachment" "attach-ecs_mlb_statsapi_etl-taskPolicy-states" {
   policy_arn = aws_iam_policy.ecs_mlb_statsapi_etl-taskPolicy-states.arn
@@ -109,7 +128,70 @@ resource "aws_iam_role_policy_attachment" "attach-ecs_mlb_statsapi_etl-taskPolic
   ]
 }
 
-resource "aws_ecs_task_definition" "ecs_task_definition_dataload" {
+
+resource "aws_iam_policy" "ecs_mlb_statsapi_etl-taskExecutionRole-policy" {
+  name = "ecs_mlb_statsapi_etl-taskExecutionRole-policy-${var.aws_region}"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:*",
+          "secretsmanager:*",
+          "ssm:*",
+          "s3:*",
+          "ecr:*",
+          "ecs:*",
+          "ec2:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "kms:Decrypt"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account}:secret:*",
+          "arn:aws:kms:${var.aws_region}:${var.aws_account}:key/*"
+        ]
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "attach-ecs_mlb_statsapi_etl-taskExecutionRole-policy" {
+  policy_arn = aws_iam_policy.ecs_mlb_statsapi_etl-taskExecutionRole-policy.arn
+  role = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.name
+  depends_on = [
+    aws_iam_policy.ecs_mlb_statsapi_etl-taskExecutionRole-policy,
+    aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole
+  ]
+}
+
+
+resource "aws_ecs_task_definition" "ecs_task_definition_mlb_statsapi_etl" {
   container_definitions = <<DEFINITION
 [{
   "logConfiguration": {
@@ -132,8 +214,10 @@ resource "aws_ecs_task_definition" "ecs_task_definition_dataload" {
 }]
   DEFINITION
   family = var.mlb_statsapi_etl_image-repository_name
+  //noinspection HILUnresolvedReference
   execution_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.arn
   memory = 1024
+  //noinspection HILUnresolvedReference
   task_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.arn
   requires_compatibilities = [
     "FARGATE"
@@ -145,3 +229,17 @@ resource "aws_ecs_task_definition" "ecs_task_definition_dataload" {
     aws_iam_role.ecs_mlb_statsapi_etl-taskRole
   ]
 }
+
+output "ecs_task_definition_mlb_statsapi_etl-arn" {
+  value = aws_ecs_task_definition.ecs_task_definition_mlb_statsapi_etl.arn
+}
+
+output "ecs_mlb_statsapi_etl-taskExecutionRole-arn" {
+  value = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.arn
+}
+
+output "ecs_mlb_statsapi_etl-taskRole-arn" {
+  value = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.arn
+}
+
+

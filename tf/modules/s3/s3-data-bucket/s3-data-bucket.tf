@@ -22,3 +22,22 @@ resource "aws_s3_bucket_public_access_block" "mlb_statsapi_s3_data_bucket_access
 output "mlb_statsapi_s3_data_bucket" {
   value = aws_s3_bucket.mlb_statsapi_s3_data_bucket.bucket
 }
+
+
+resource "aws_iam_policy" "mlb_statsapi_s3_data_bucket_service_policy" {
+  name = "mlb_statsapi_s3_data_bucket_service_policy-${var.aws_region}"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:PutObject",
+      ]
+      Resource = "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.gz"
+    }]
+  })
+}
+
+output "mlb_statsapi_s3_data_bucket_service_policy-arn" {
+  value = aws_iam_policy.mlb_statsapi_s3_data_bucket_service_policy.arn
+}
