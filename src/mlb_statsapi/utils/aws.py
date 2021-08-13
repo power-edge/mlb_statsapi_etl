@@ -17,7 +17,7 @@ class AWSClient(LogMixin):
 def check_response(func):
     """method annotation to check the HTTPStatusCode for boto3 calls"""
     def checker(self: AWSClient, *args, **kwargs):
-        self.log.info(f"{func.__name__} {args=} {kwargs=}")
+        print(f"{func.__name__} {args=} {kwargs=}")
         res = func(self, *args, **kwargs)
         assert res['ResponseMetadata']['HTTPStatusCode'] == 200, f"{func.__name__} failed: {str(res)}"
         return res
@@ -71,12 +71,12 @@ class S3(AWSClient):
 
     # NO check_response: does not provide the HTTPStatusCode!!!
     def upload_file(self, Bucket, Key, Filename):
-        self.log.info(f"upload_file {Bucket=} {Key=} {Filename=}")
+        print(f"upload_file {Bucket=} {Key=} {Filename=}")
         return self._client.upload_file(Bucket=Bucket, Key=Key, Filename=Filename)
 
     # NO check_response: does not provide the HTTPStatusCode!!!
     def download_file(self, Bucket, Key, Filename):
-        self.log.info(f"download_file {Bucket=} {Key=} {Filename=}")
+        print(f"download_file {Bucket=} {Key=} {Filename=}")
         res = self._client.download_file(Bucket=Bucket, Key=Key, Filename=Filename)
         assert os.path.isfile(Filename), f"download_file failed: {str(res)}"
         return res

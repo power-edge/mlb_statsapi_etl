@@ -3,11 +3,13 @@ variable "build_version" {}
 variable "always_run" {}
 variable "aws_region" {}
 variable "mlb_statsapi_lambda_layer_arn" {}
+variable "AWSLambdaBasicExecutionRole-arn" {}
+
 
 locals {
   function_name = "mlb_statsapi-states-gameday-set_scheduled_games"
-  handler = "mlb_statsapi.states.gameday.set_scheduled_games.lambda_handler"
-  handler_file = "src/mlb_statsapi/states/gameday/set_scheduled_games.py"
+  handler = "mlb_statsapi.functions.states.gameday.set_scheduled_games.lambda_handler"
+  handler_file = "src/mlb_statsapi/functions/states/gameday/set_scheduled_games.py"
 }
 
 resource "aws_iam_role" "mlb_statsapi_states_gameday_set_scheduled_games_lambda_role" {
@@ -25,6 +27,13 @@ resource "aws_iam_role" "mlb_statsapi_states_gameday_set_scheduled_games_lambda_
     ]
   })
 }
+
+
+resource "aws_iam_role_policy_attachment" "mlb_statsapi_states_gameday_set_scheduled_games_lambda_role__AWSLambdaBasicExecutionRole-attachment" {
+  policy_arn = var.AWSLambdaBasicExecutionRole-arn
+  role = aws_iam_role.mlb_statsapi_states_gameday_set_scheduled_games_lambda_role.name
+}
+
 
 resource "aws_cloudwatch_log_group" "mlb_statsapi_states_gameday_set_scheduled_games_lambda-Logs" {
   name = "/aws/lambda/${aws_lambda_function.mlb_statsapi_states_gameday_set_scheduled_games_lambda.function_name}"
@@ -54,7 +63,7 @@ resource "aws_iam_policy" "mlb_statsapi_states_gameday_set_scheduled_games_lambd
 }
 
 
-resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_gameday_role__mlb_statsapi_states_gameday_set_scheduled_games_lambda_logs_policy" {
+resource "aws_iam_role_policy_attachment" "mlb_statsapi_states_gameday_set_scheduled_games_lambda_role__mlb_statsapi_states_gameday_set_scheduled_games_lambda_logs_policy" {
   //noinspection HILUnresolvedReference
   policy_arn = aws_iam_policy.mlb_statsapi_states_gameday_set_scheduled_games_lambda_logs_policy.arn
   role = aws_iam_role.mlb_statsapi_states_gameday_set_scheduled_games_lambda_role.name

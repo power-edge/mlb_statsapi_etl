@@ -3,12 +3,15 @@ variable "build_version" {}
 variable "always_run" {}
 variable "aws_region" {}
 variable "mlb_statsapi_lambda_layer_arn" {}
+variable "AWSLambdaBasicExecutionRole-arn" {}
+
 
 locals {
   function_name = "mlb_statsapi-states-gameday-date_in_season"
-  handler = "mlb_statsapi.states.gameday.date_in_season.lambda_handler"
-  handler_file = "src/mlb_statsapi/states/gameday/date_in_season.py"
+  handler = "mlb_statsapi.functions.states.gameday.date_in_season.lambda_handler"
+  handler_file = "src/mlb_statsapi/functions/states/gameday/date_in_season.py"
 }
+
 
 resource "aws_iam_role" "mlb_statsapi_states_gameday_date_in_season_lambda_role" {
   name = "${local.function_name}-role-${var.aws_region}"
@@ -25,6 +28,13 @@ resource "aws_iam_role" "mlb_statsapi_states_gameday_date_in_season_lambda_role"
     ]
   })
 }
+
+
+resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_gameday_role__AWSLambdaBasicExecutionRole-attachment" {
+  policy_arn = var.AWSLambdaBasicExecutionRole-arn
+  role = aws_iam_role.mlb_statsapi_states_gameday_date_in_season_lambda_role.name
+}
+
 
 
 resource "aws_iam_policy" "mlb_statsapi_states_gameday_date_in_season_lambda_logs_policy" {

@@ -45,3 +45,15 @@ output "mlb_statsapi_lambda_layer_ver" {
 output "mlb_statsapi_lambda_layer_arn" {
   value = aws_lambda_layer_version.mlb_statsapi_lambda_layer_ver.arn
 }
+
+
+/*
+  AWSLambdaBasicExecutionRole
+*/
+data "aws_iam_policy" "AWSLambdaBasicExecutionRole" {
+  arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+output "AWSLambdaBasicExecutionRole-arn" {
+  value = data.aws_iam_policy.AWSLambdaBasicExecutionRole.arn
+}

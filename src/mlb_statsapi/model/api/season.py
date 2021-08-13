@@ -34,7 +34,7 @@ class SeasonModel(MLBStatsAPIEndpointModel):
         game_pk = kwargs['game_pk']
         start_timestamp = kwargs['start_timestamp']
         end_timestamp = kwargs['end_timestamp']
-        self.log(f'run {game_pk=}, {start_timestamp=}, {end_timestamp=}')
+        print(f'run {game_pk=}, {start_timestamp=}, {end_timestamp=}')
 
         liveTimestampv11 = self.liveTimestampv11(path_params={"game_pk": game_pk}).get()
         timestamps = {*liveTimestampv11.obj}

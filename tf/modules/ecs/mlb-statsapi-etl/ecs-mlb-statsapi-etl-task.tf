@@ -3,8 +3,6 @@ variable "aws_account" {}
 variable "aws_region" {}
 variable "env_name" {}
 
-variable "run-ecr-mlb-statsapi-etl-build" {}
-variable "run-ecr-mlb-statsapi-etl-push" {}
 variable "build_version" {}
 
 variable "mlb_statsapi_etl_image-repository_name" {}
@@ -150,7 +148,6 @@ resource "aws_iam_policy" "ecs_mlb_statsapi_etl-taskExecutionRole-policy" {
       {
         Effect = "Allow"
         Action = [
-          "ecr:GetAuthorizationToken",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
@@ -160,6 +157,7 @@ resource "aws_iam_policy" "ecs_mlb_statsapi_etl-taskExecutionRole-policy" {
         Effect = "Allow",
         Action = [
           "ecr:BatchCheckLayerAvailability",
+          "ecr:GetAuthorizationToken",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage"
         ]

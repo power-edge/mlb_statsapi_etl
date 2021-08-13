@@ -162,7 +162,7 @@ resource "aws_cloudwatch_log_group" "sf_mlb_statsapi_etl_gameday_logs" {
 
 
 resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_gameday" {
-name = local.sf_mlb_statsapi_etl_gameday
+  name = local.sf_mlb_statsapi_etl_gameday
   role_arn = aws_iam_role.sf_mlb_statsapi_etl_gameday_role.arn
 
   definition = <<DEFINITION
@@ -325,6 +325,11 @@ DEFINITION
     aws_iam_role_policy_attachment.sf_mlb_statsapi_etl_gameday_role__gameday_invoke_lambda_scoped_access_policy,
     aws_cloudwatch_log_group.sf_mlb_statsapi_etl_gameday_logs
   ]
+}
+
+
+output "sf_mlb_statsapi_etl_gameday" {
+  value = local.sf_mlb_statsapi_etl_gameday
 }
 
 output "sf_mlb_statsapi_etl_gameday-arn" {

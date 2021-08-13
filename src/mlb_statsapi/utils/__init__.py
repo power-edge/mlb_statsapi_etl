@@ -6,12 +6,14 @@ import os
 import pytz
 from functools import reduce
 
+
 CONFIGS_PATH = os.environ.get(
     'MLB_STATSAPI_ETL__CONFIGS_PATH',
     "%s/configs" % reduce(lambda d, _: os.path.dirname(d), range(4), os.path.realpath(__file__))
 )
 
 TZ_America_New_York = pytz.timezone("America/New_York")
+
 
 def check_response(func):
     """method annotation to check the HTTPStatusCode for boto3 calls"""

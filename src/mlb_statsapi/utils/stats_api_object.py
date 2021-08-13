@@ -71,11 +71,11 @@ class StatsAPIObject(LogMixin):
         if ext == 'json':
             with open(self.file_path, 'r') as f:
                 self.obj = json.load(f)
-            self.log.info("loaded %s from %s" % (self, self.file_path))
+            print("loaded %s from %s" % (self, self.file_path))
         elif ext == 'json.gz':
             with gzip.open(self.gz_path, 'r') as f:  # 4. gzip
                 self.obj = json.loads(f.read().decode('utf-8'))
-            self.log.info("loaded %s from %s" % (self, self.gz_path))
+            print("loaded %s from %s" % (self, self.gz_path))
         else:
             raise NotImplementedError("reading from %s is not supported" % ext)
         return self
@@ -116,21 +116,21 @@ class StatsAPIObject(LogMixin):
             os.makedirs(os.path.dirname(self.file_path))
         with open(f"{self.file_path}", 'w') as f:
             f.write(json.dumps(self.obj))
-        self.log.info("saved %s to %s" % (self, self.file_path))
+        print("saved %s to %s" % (self, self.file_path))
         # os.chmod(self.file_path, stat.S_IREAD)
 
     def tar(self):
         tf = tarfile.open(self.tar_gz_path, mode="w:gz")
         tf.add(self.file_path)
         tf.close()
-        self.log.info(f"gzipped {self.tar_gz_path}")
+        print(f"gzipped {self.tar_gz_path}")
 
     def gzip(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):
             os.makedirs(os.path.dirname(self.file_path))
         with gzip.open(self.gz_path, 'wb') as f:
             f.write(json.dumps(self.obj).encode('utf-8'))
-        self.log.info("gzipped %s to %s" % (self, self.gz_path))
+        print("gzipped %s to %s" % (self, self.gz_path))
 
     @property
     def tar_gz_path(self):

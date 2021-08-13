@@ -9,7 +9,7 @@ from .. import strpdate
 
 
 def lambda_handler(event: dict, context) -> bool:
-    print(f"{context.function_name=}, {context.function_version=}")
+    print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")
     from mlb_statsapi.model import StatsAPI

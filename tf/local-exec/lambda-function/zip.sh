@@ -26,34 +26,60 @@ if [ "$BUILD" = "" ]; then
   exit 1
 fi
 
+
+getpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+
 STAGE="./$FUNCTION"
 ZIPFILE="./$BUILD-$ALWAYS_RUN.zip"
+
 
 prep_stage(){
   if [ -d "$STAGE" ]; then
     rm -rf "$STAGE"
   fi
   mkdir -p "$STAGE"
-  mkdir -p "$(dirname "$STAGE/$HANDLER_FILE")"
 }
+
 
 remove_pycache(){
   find "$STAGE" | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 }
 
+
 remove_non_lambda_handlers(){
   rm -rf "$STAGE/mlb_statsapi/cli.py"
   rm -rf "$STAGE/mlb_statsapi/apps"
-  find "$STAGE/mlb_statsapi/states" \
+
+  # remove directories that don't match
+  export HF="$(echo "$HANDLER_FILE" | xargs dirname | cut -d "/" -f 2-)"
+  export HANDLER_DIRECTORY="$STAGE/$HF"
+  for stage_directory in $(find "$STAGE/mlb_statsapi/functions" -type d); do
+    case "$HANDLER_DIRECTORY" in
+    ("$stage_directory"*)
+      ;;
+    (*)
+      rm -rf "$stage_directory"
+      ;;
+    esac
+  done
+
+  # remove files that don't match ( should be none left )
+  find "$STAGE/mlb_statsapi/functions" \
     -type f \
     -not -name '__init__.py' \
     -not -name "$(basename "$HANDLER_FILE")" \
   | xargs rm -rf
+
 }
+
 
 copy_src(){
   cp -r ../../../src/mlb_statsapi "$STAGE/"
 }
+
 
 zip_lambda(){
   cd "$STAGE" && \
