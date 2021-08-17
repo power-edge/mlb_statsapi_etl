@@ -64,6 +64,8 @@ class StatsAPIObject(LogMixin):
         status_code = response.status_code
         assert status_code == 200, f'get {self.url} failed with status {status_code}: {response.content.decode()}'
         self.obj = response.json()
+        if isinstance(self.obj, dict) and ("copyright" in self.obj.keys()):
+            self.obj.pop("copyright")
         self.log.debug("got %s from %s" % (self, self.url))
         return self
 

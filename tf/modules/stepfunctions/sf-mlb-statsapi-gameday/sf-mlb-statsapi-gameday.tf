@@ -274,16 +274,16 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_gameday" {
                 "game.$": "$$.Map.Item.Value"
               },
               "Iterator": {
-                "StartAt": "waitUntil",
+                "StartAt": "wait_pregame",
                 "States": {
-                  "waitUntil": {
+                  "wait_pregame": {
                     "Type": "Wait",
-                    "TimestampPath": "$.game.waitUntil",
+                    "TimestampPath": "$.game.startPregame",
                     "Next": "${var.sf_mlb_statsapi_etl_gamePk-name}"
                   },
                   "${var.sf_mlb_statsapi_etl_gamePk-name}": {
                     "Type": "Task",
-                    "Resource": "arn:aws:states:::states:startExecution.sync",
+                    "Resource": "arn:aws:states:::states:startExecution.waitForTaskToken",
                     "Parameters": {
                       "Name.$": "States.Format('{}-{}-{}', $.game.gamePk, $.game.startTimestamp, $.game.uid)",
                       "StateMachineArn": "${var.sf_mlb_statsapi_etl_gamePk-arn}",

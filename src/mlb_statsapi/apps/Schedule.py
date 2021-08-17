@@ -26,13 +26,13 @@ def refresh(sch: StatsAPIObject, date: str) -> bool:
     Preview, Live, Final, Other = 'Preview', 'Live', 'Final', 'Other'
     sleepFor = 0
     if Live in abstractGameStates:
-        sleepFor = 15
+        sleepFor = 60 * 1
         print(f"{apiName=} abstractGameStates are {Live}, {sleepFor=}")
     elif Preview in abstractGameStates:
-        sleepFor = 60
+        sleepFor = 60 * 15
         print(f"{apiName=} abstractGameStates are in {Preview}, {sleepFor=}")
     elif Other in abstractGameStates:
-        sleepFor = 30
+        sleepFor = 60 * 5
         print(f"{apiName=} abstractGameStates are in {Other}, {sleepFor=}")
     elif {Final,} == abstractGameStates:
         print(f"{apiName=} abstractGameStates are all {Final}, {sleepFor=}")

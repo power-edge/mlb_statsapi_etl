@@ -3,16 +3,18 @@ created by nikos at 5/2/21
 """
 import datetime
 import os
-import pytz
 from functools import reduce
 
 
 CONFIGS_PATH = os.environ.get(
-    'MLB_STATSAPI_ETL__CONFIGS_PATH',
+    'MLB_STATSAPI__CONFIGS_PATH',
     "%s/configs" % reduce(lambda d, _: os.path.dirname(d), range(4), os.path.realpath(__file__))
 )
 
-TZ_America_New_York = pytz.timezone("America/New_York")
+
+def TZ_America_New_York():
+    import pytz
+    return pytz.timezone("America/New_York")
 
 
 def check_response(func):
@@ -25,4 +27,4 @@ def check_response(func):
 
 
 def get_current_mlb_date() -> datetime.date:
-    return datetime.datetime.now(tz=TZ_America_New_York).date()
+    return datetime.datetime.now(tz=TZ_America_New_York()).date()

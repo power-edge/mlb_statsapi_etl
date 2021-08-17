@@ -20,10 +20,6 @@ SITE_PACKAGES="$LAYER_NAME/lib/python${PYVERSION}/site-packages"
 
 prep_stage(){
   rm -rf "./$LAYER_NAME-"*
-  if [ -f "$ZIPFILE" ]; then
-    echo "removing ZIPFILE $ZIPFILE"
-    rm "$ZIPFILE"
-  fi
 }
 
 

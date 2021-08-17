@@ -11,6 +11,7 @@ class StandingsModel(MLBStatsAPIEndpointModel):
     def standings(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        standings,
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.standings,
     )}

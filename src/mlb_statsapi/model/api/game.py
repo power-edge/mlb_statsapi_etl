@@ -69,19 +69,20 @@ class GameModel(MLBStatsAPIEndpointModel):
     def playByPlay(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        liveGameV1,
-        liveGameDiffPatchV1,
-        liveTimestampv11,
-        currentGameStats,
-        getGameContextMetrics,
-        getWinProbability,
-        boxscore,
-        content,
-        colorFeed,
-        colorTimestamps,
-        linescore,
-        playByPlay
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.liveGameV1,
+        self.liveGameDiffPatchV1,
+        self.liveTimestampv11,
+        self.currentGameStats,
+        self.getGameContextMetrics,
+        self.getWinProbability,
+        self.boxscore,
+        self.content,
+        self.colorFeed,
+        self.colorTimestamps,
+        self.linescore,
+        self.playByPlay
     )}
 
     @property

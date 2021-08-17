@@ -120,7 +120,7 @@ resource "aws_lambda_function" "mlb_statsapi_states_gameday_date_in_season_lambd
     variables = {
       Description = "Boolean lambda for if a date is in-season"
       Env = var.env_name
-      MLB_STATSAPI_ETL__CONFIGS_PATH = "/opt/configs"
+      MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
     }
   }
 

@@ -104,8 +104,8 @@ class StepFunctions(AWSClient):
         return self._client.get_execution_history(executionArn=executionArn)
 
     @check_response
-    def start_execution(self, stateMachineArn, name, _input):
-        return self._client.start_execution(stateMachineArn=stateMachineArn, name=name, input=_input)
+    def start_execution(self, stateMachineArn, name, input):
+        return self._client.start_execution(stateMachineArn=stateMachineArn, name=name, input=input)
 
     @check_response
     def send_task_success(self, taskToken, output):
@@ -118,6 +118,14 @@ class StepFunctions(AWSClient):
     @check_response
     def stop_execution(self, executionArn):
         return self._client.stop_execution(executionArn=executionArn)
+
+
+# noinspection PyPep8Naming
+class SQS(AWSClient):
+
+    @check_response
+    def delete_message(self, QueueUrl, ReceiptHandle: str, ):
+        return self._client.delete_message(QueueUrl=QueueUrl, ReceiptHandle=ReceiptHandle)
 
 
 # noinspection PyPep8Naming

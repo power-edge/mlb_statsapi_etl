@@ -141,7 +141,7 @@ resource "aws_lambda_function" "mlb_statsapi_triggers_gameday_start_execution_la
     variables = {
       Description = "Trigger for states:StartExecution for the gameday Step Function"
       Env = var.env_name
-      MLB_STATSAPI_ETL__CONFIGS_PATH = "/opt/configs"
+      MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
       STATE_MACHINE_ARN = var.sf_mlb_statsapi_etl_gameday-arn
     }
   }
@@ -158,8 +158,9 @@ resource "aws_cloudwatch_event_rule" "mlb_statsapi_etl_gameday_event_rule" {
   description = "Daily trigger for ${aws_lambda_function.mlb_statsapi_triggers_gameday_start_execution_lambda.arn} and ${var.sf_mlb_statsapi_etl_gameday-arn}"
   schedule_expression = "cron(0 8 * * ? *)"
 //schedule_expression = "cron(0/5 * * * ? *)"  # At every 5th minute
-  is_enabled = true
+   is_enabled = true
 }
+
 
 resource "aws_iam_role" "mlb_statsapi_etl-gameday-start_execution-event_trigger_role" {
   name = "mlb_statsapi-gameday-StartExecution-EventTriggerRole-${var.aws_region}"

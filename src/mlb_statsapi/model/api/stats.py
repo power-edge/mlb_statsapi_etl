@@ -19,8 +19,9 @@ class StatsModel(MLBStatsAPIEndpointModel):
     def stats(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        groupedStats,
-        leaders,
-        stats
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.groupedStats,
+        self.leaders,
+        self.stats
     )}

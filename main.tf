@@ -14,9 +14,12 @@ variable "sn_pub_b0_cidr_block" {}
 variable "always_run-ecr-mlb-statsapi-etl-build" {}
 variable "always_run-ecr-mlb-statsapi-etl-push" {}
 variable "always_run-lambda-layer-mlb-statsapi" {}
+variable "always_run-lambda-function-run-workflow" {}
+variable "always_run-lambda-function-event-handler" {}
+variable "always_run-lambda-sf-season-state-set-season" {}
 variable "always_run-lambda-sf-gameday-state-date-in-season" {}
 variable "always_run-lambda-sf-gameday-state-set-scheduled-games" {}
-variable "always_run-lambda-sf-gameday-trigger-start-execution" {}
+
 
 terraform {
     backend "s3" {
@@ -34,14 +37,22 @@ locals {
     always_run-ecr-mlb-statsapi-etl-build = coalesce(var.always_run-ecr-mlb-statsapi-etl-build, timestamp())
     always_run-ecr-mlb-statsapi-etl-push = coalesce(var.always_run-ecr-mlb-statsapi-etl-push, timestamp())
     always_run-lambda-layer-mlb-statsapi = coalesce(var.always_run-lambda-layer-mlb-statsapi, timestamp())
+    always_run-lambda-function-run-workflow = coalesce(var.always_run-lambda-function-run-workflow, timestamp())
+    always_run-lambda-function-event-handler = coalesce(var.always_run-lambda-function-event-handler, timestamp())
+
+    always_run-lambda-sf-season-state-set-season = coalesce(var.always_run-lambda-sf-season-state-set-season, timestamp())
     always_run-lambda-sf-gameday-state-date-in-season = coalesce(var.always_run-lambda-sf-gameday-state-date-in-season, timestamp())
     always_run-lambda-sf-gameday-state-set-scheduled-games = coalesce(var.always_run-lambda-sf-gameday-state-set-scheduled-games, timestamp())
-    always_run-lambda-sf-gameday-trigger-start-execution = coalesce(var.always_run-lambda-sf-gameday-trigger-start-execution, timestamp())
 }
 
 
 module "variables" {
     source = "./tf/variables"
+}
+
+module "iam-logs-delivery-full-access-policy" {
+    source = "./tf/modules/iam/iam-logs-delivery-full-access-policy"
+    aws_region = var.aws_region
 }
 
 
@@ -72,6 +83,11 @@ module "mlb-statsapi-vpc" {
     sn_prv_b0_cidr_block = var.sn_prv_b0_cidr_block
     sn_pub_a0_cidr_block = var.sn_pub_a0_cidr_block
     sn_pub_b0_cidr_block = var.sn_pub_b0_cidr_block
+}
+
+module "mlb-statsapi-event-notification" {
+    source = "./tf/modules/notifications/mlb-statsapi-event-notification"
+    aws_region = var.aws_region
 }
 
 
@@ -127,36 +143,86 @@ module "lambda-layer-mlb-statsapi" {
 }
 
 
-module "lambda-sf-gameday-state-date-in-season" {
-    source = "./tf/modules/lambda-function/lambda-sf-gameday-state-date-in-season"
+module "sf-mlb-statsapi-season" {
+    source = "./tf/modules/stepfunctions/sf-mlb-statsapi-season"
 
-    aws_region = var.aws_region
     env_name = var.env_name
-    build_version = module.variables.build
-    always_run = local.always_run-lambda-sf-gameday-state-date-in-season
-    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
-    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
+    aws_profile = var.aws_profile
+    aws_account = var.aws_account
+    aws_region = var.aws_region
 
-    depends_on = [
-        module.lambda-layer-mlb-statsapi
-    ]
+    cloudwatch_logs_delivery_full_access_policy-arn = module.iam-logs-delivery-full-access-policy.cloudwatch_logs_delivery_full_access_policy-arn
+
+    sns_mlb_statsapi_event_arn = module.mlb-statsapi-event-notification.sns_mlb_statsapi_event_arn
 }
 
 
-module "lambda-sf-gameday-state-set-scheduled-games" {
-    source = "./tf/modules/lambda-function/lambda-sf-gameday-state-set-scheduled-games"
+module "lambda-function-run-workflow" {
+    source = "./tf/modules/lambda-function/lambda-function-run-workflow"
 
     aws_region = var.aws_region
     env_name = var.env_name
+    aws_account = var.aws_account
     build_version = module.variables.build
-    always_run = local.always_run-lambda-sf-gameday-state-set-scheduled-games
+    always_run = local.always_run-lambda-function-run-workflow
+
     mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
     AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
 
-    depends_on = [
-        module.lambda-layer-mlb-statsapi
-    ]
+    sf_mlb_statsapi_etl_season-arn = module.sf-mlb-statsapi-season.sf_mlb_statsapi_etl_season-arn
+    sf_mlb_statsapi_etl_season-name = module.sf-mlb-statsapi-season.sf_mlb_statsapi_etl_season-name
 }
+
+
+module "lambda-function-event-handler" {
+    source = "./tf/modules/lambda-function/lambda-function-event-handler"
+
+    aws_region = var.aws_region
+    env_name = var.env_name
+    aws_account = var.aws_account
+    build_version = module.variables.build
+    always_run = local.always_run-lambda-function-event-handler
+
+    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
+    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
+    mlb_statsapi_s3_data_bucket_service_policy-arn = module.s3-data-bucket.mlb_statsapi_s3_data_bucket_service_policy-arn
+
+    sqs_mlb_statsapi_event-arn = module.mlb-statsapi-event-notification.sqs_mlb_statsapi_event-arn
+    sqs_mlb_statsapi_event-id = module.mlb-statsapi-event-notification.sqs_mlb_statsapi_event-id
+    sqs_mlb_statsapi_event-name = module.mlb-statsapi-event-notification.sqs_mlb_statsapi_event-name
+}
+
+
+//module "lambda-sf-gameday-state-date-in-season" {
+//    source = "./tf/modules/lambda-function/lambda-sf-gameday-state-date-in-season"
+//
+//    aws_region = var.aws_region
+//    env_name = var.env_name
+//    build_version = module.variables.build
+//    always_run = local.always_run-lambda-sf-gameday-state-date-in-season
+//    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
+//    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
+//
+//    depends_on = [
+//        module.lambda-layer-mlb-statsapi
+//    ]
+//}
+//
+//
+//module "lambda-sf-gameday-state-set-scheduled-games" {
+//    source = "./tf/modules/lambda-function/lambda-sf-gameday-state-set-scheduled-games"
+//
+//    aws_region = var.aws_region
+//    env_name = var.env_name
+//    build_version = module.variables.build
+//    always_run = local.always_run-lambda-sf-gameday-state-set-scheduled-games
+//    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
+//    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
+//
+//    depends_on = [
+//        module.lambda-layer-mlb-statsapi
+//    ]
+//}
 
 
 ////dynamodb-mlb-statsapi-gameday.tf
@@ -169,78 +235,77 @@ module "lambda-sf-gameday-state-set-scheduled-games" {
 //}
 
 
-module "sf-mlb-statsapi-gamePk" {
-    source = "./tf/modules/stepfunctions/sf-mlb-statsapi-gamePk"
-
-    env_name = var.env_name
-    aws_profile = var.aws_profile
-    aws_account = var.aws_account
-    aws_region = var.aws_region
-
-}
-
-
-module "sf-mlb-statsapi-gameday" {
-    source = "./tf/modules/stepfunctions/sf-mlb-statsapi-gameday"
-
-    env_name = var.env_name
-    aws_profile = var.aws_profile
-    aws_account = var.aws_account
-    aws_region = var.aws_region
-
-    mlb_statsapi_states_gameday_date_in_season_lambda-function_name = module.lambda-sf-gameday-state-date-in-season.mlb_statsapi_states_gameday_date_in_season_lambda-function_name
-    mlb_statsapi_states_gameday_date_in_season_lambda-arn = module.lambda-sf-gameday-state-date-in-season.mlb_statsapi_states_gameday_date_in_season_lambda-arn
-
-    mlb_statsapi_states_gameday_set_scheduled_games_lambda-function_name = module.lambda-sf-gameday-state-set-scheduled-games.mlb_statsapi_states_gameday_set_scheduled_games_lambda-function_name
-    mlb_statsapi_states_gameday_set_scheduled_games_lambda-arn = module.lambda-sf-gameday-state-set-scheduled-games.mlb_statsapi_states_gameday_set_scheduled_games_lambda-arn
-
-    cloudwatch_logs_delivery_full_access_policy-arn = module.sf-mlb-statsapi-gamePk.cloudwatch_logs_delivery_full_access_policy-arn
-
-    sf_mlb_statsapi_etl_gamePk-arn = module.sf-mlb-statsapi-gamePk.sf_mlb_statsapi_etl_gamePk-arn
-    sf_mlb_statsapi_etl_gamePk-name = module.sf-mlb-statsapi-gamePk.sf_mlb_statsapi_etl_gamePk-name
-
-    mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
-    ecs_cluster_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_cluster_mlb_statsapi_etl-arn
-
-    ecs_task_definition_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_task_definition_mlb_statsapi_etl-arn
-
-    ecs_mlb_statsapi_etl-taskExecutionRole-arn = module.ecs-mlb-statsapi-etl-task.ecs_mlb_statsapi_etl-taskExecutionRole-arn
-    ecs_mlb_statsapi_etl-taskRole-arn = module.ecs-mlb-statsapi-etl-task.ecs_mlb_statsapi_etl-taskRole-arn
-
-    mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
-    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
-    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
-
-    depends_on = [
-        module.mlb-statsapi-vpc,
-        module.lambda-sf-gameday-state-date-in-season,
-        module.lambda-sf-gameday-state-set-scheduled-games,
-        module.sf-mlb-statsapi-gamePk
-    ]
-
-}
+//module "sf-mlb-statsapi-gamePk" {
+//    source = "./tf/modules/stepfunctions/sf-mlb-statsapi-gamePk"
+//
+//    env_name = var.env_name
+//    aws_profile = var.aws_profile
+//    aws_account = var.aws_account
+//    aws_region = var.aws_region
+//}
 
 
-module "lambda-sf-gameday-trigger-start-execution" {
-    source = "./tf/modules/lambda-function/lambda-sf-gameday-trigger-start-execution"
-
-    aws_region = var.aws_region
-    env_name = var.env_name
-    build_version = module.variables.build
-    always_run = local.always_run-lambda-sf-gameday-trigger-start-execution
-    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
-
-    sf_mlb_statsapi_etl_gameday = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday
-    sf_mlb_statsapi_etl_gameday-arn = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday-arn
-
-    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
-
-    depends_on = [
-        module.variables,
-        module.lambda-layer-mlb-statsapi,
-        module.sf-mlb-statsapi-gameday,
-    ]
-}
+//module "sf-mlb-statsapi-gameday" {
+//    source = "./tf/modules/stepfunctions/sf-mlb-statsapi-gameday"
+//
+//    env_name = var.env_name
+//    aws_profile = var.aws_profile
+//    aws_account = var.aws_account
+//    aws_region = var.aws_region
+//
+//    mlb_statsapi_states_gameday_date_in_season_lambda-function_name = module.lambda-sf-gameday-state-date-in-season.mlb_statsapi_states_gameday_date_in_season_lambda-function_name
+//    mlb_statsapi_states_gameday_date_in_season_lambda-arn = module.lambda-sf-gameday-state-date-in-season.mlb_statsapi_states_gameday_date_in_season_lambda-arn
+//
+//    mlb_statsapi_states_gameday_set_scheduled_games_lambda-function_name = module.lambda-sf-gameday-state-set-scheduled-games.mlb_statsapi_states_gameday_set_scheduled_games_lambda-function_name
+//    mlb_statsapi_states_gameday_set_scheduled_games_lambda-arn = module.lambda-sf-gameday-state-set-scheduled-games.mlb_statsapi_states_gameday_set_scheduled_games_lambda-arn
+//
+//    cloudwatch_logs_delivery_full_access_policy-arn = module.sf-mlb-statsapi-gamePk.cloudwatch_logs_delivery_full_access_policy-arn
+//
+//    sf_mlb_statsapi_etl_gamePk-arn = module.sf-mlb-statsapi-gamePk.sf_mlb_statsapi_etl_gamePk-arn
+//    sf_mlb_statsapi_etl_gamePk-name = module.sf-mlb-statsapi-gamePk.sf_mlb_statsapi_etl_gamePk-name
+//
+//    mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
+//    ecs_cluster_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_cluster_mlb_statsapi_etl-arn
+//
+//    ecs_task_definition_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_task_definition_mlb_statsapi_etl-arn
+//
+//    ecs_mlb_statsapi_etl-taskExecutionRole-arn = module.ecs-mlb-statsapi-etl-task.ecs_mlb_statsapi_etl-taskExecutionRole-arn
+//    ecs_mlb_statsapi_etl-taskRole-arn = module.ecs-mlb-statsapi-etl-task.ecs_mlb_statsapi_etl-taskRole-arn
+//
+//    mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
+//    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
+//    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
+//
+//    depends_on = [
+//        module.mlb-statsapi-vpc,
+//        module.lambda-sf-gameday-state-date-in-season,
+//        module.lambda-sf-gameday-state-set-scheduled-games,
+//        module.sf-mlb-statsapi-gamePk
+//    ]
+//
+//}
+//
+//
+//module "lambda-sf-gameday-trigger-start-execution" {
+//    source = "./tf/modules/lambda-function/lambda-sf-gameday-trigger-start-execution"
+//
+//    aws_region = var.aws_region
+//    env_name = var.env_name
+//    build_version = module.variables.build
+//    always_run = local.always_run-lambda-sf-gameday-trigger-start-execution
+//    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
+//
+//    sf_mlb_statsapi_etl_gameday = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday
+//    sf_mlb_statsapi_etl_gameday-arn = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday-arn
+//
+//    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
+//
+//    depends_on = [
+//        module.variables,
+//        module.lambda-layer-mlb-statsapi,
+//        module.sf-mlb-statsapi-gameday,
+//    ]
+//}
 
 
 //module "notifications" {

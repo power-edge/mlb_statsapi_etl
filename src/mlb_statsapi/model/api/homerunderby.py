@@ -27,10 +27,11 @@ class HomeRunDerbyModel(MLBStatsAPIEndpointModel):
     def homeRunDerbyGamePool(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        homeRunDerby,
-        homeRunDerbyBracket,
-        homeRunDerbyPool,
-        homeRunDerbyGameBracket,
-        homeRunDerbyGamePool
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.homeRunDerby,
+        self.homeRunDerbyBracket,
+        self.homeRunDerbyPool,
+        self.homeRunDerbyGameBracket,
+        self.homeRunDerbyGamePool
     )}

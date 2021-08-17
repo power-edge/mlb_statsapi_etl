@@ -29,10 +29,11 @@ class ScheduleModel(MLBStatsAPIEndpointModel):
             raise NotImplementedError("this beta statsapi docs is buggy: will not allow you to pass the scheduleType!")
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        schedule,
-        tieGames,
-        postseasonScheduleSeries,
-        tuneIn,
-        scheduleType
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.schedule,
+        self.tieGames,
+        self.postseasonScheduleSeries,
+        self.tuneIn,
+        self.scheduleType
     )}

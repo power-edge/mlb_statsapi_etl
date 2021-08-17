@@ -20,7 +20,7 @@ def get_games(date: str) -> dict:
         ).get().obj["dates"]
     }[date]["games"]:
         gameDate = strp_game_date(game["gameDate"])
-        game["waitUntil"] = (gameDate - datetime.timedelta(hours=1)).isoformat()
+        game["startPregame"] = (gameDate - datetime.timedelta(hours=1)).isoformat()
         game["startTimestamp"] = gameDate.strftime(game_timestamp_format)
         game["uid"] = str(uuid.uuid4()).split('-')[0]
         yield game

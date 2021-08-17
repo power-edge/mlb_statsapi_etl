@@ -31,11 +31,12 @@ class MilestonesModel(MLBStatsAPIEndpointModel):
     def milestones(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        achievementStatuses,
-        milestoneDurations,
-        milestoneLookups,
-        milestoneStatistics,
-        milestoneTypes,
-        milestones
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.achievementStatuses,
+        self.milestoneDurations,
+        self.milestoneLookups,
+        self.milestoneStatistics,
+        self.milestoneTypes,
+        self.milestones
     )}

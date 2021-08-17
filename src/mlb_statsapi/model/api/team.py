@@ -67,16 +67,17 @@ class TeamModel(MLBStatsAPIEndpointModel):
     def roster(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        teams,
-        # affiliates,
-        # allTeams,
-        stats,
-        statsLeaders,
-        teamAffiliates,
-        alumni,
-        coaches,
-        history,
-        leaders,
-        roster
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.teams,
+        # self.affiliates,
+        # self.allTeams,
+        self.stats,
+        self.statsLeaders,
+        self.teamAffiliates,
+        self.alumni,
+        self.coaches,
+        self.history,
+        self.leaders,
+        self.roster
     )}

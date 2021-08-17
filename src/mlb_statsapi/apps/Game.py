@@ -12,10 +12,6 @@ from mlb_statsapi.utils.stats_api_object import StatsAPIObject
 apiName = os.path.basename(__file__).replace('.py', '')
 
 
-def get_game(sch: StatsAPIObject, date: str, gamePk: int) -> dict:
-    return {game["gamePk"]: game for game in {
-        d["date"]: d for d in sch.obj["dates"]
-    }[date]["games"]}[gamePk]
 
 def refresh(sch: StatsAPIObject, date: str, gamePk: int) -> bool:
     if sch.obj is None:

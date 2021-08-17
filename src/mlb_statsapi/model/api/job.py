@@ -23,9 +23,10 @@ class JobModel(MLBStatsAPIEndpointModel):
     def umpires(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        getJobsByType,
-        datacasters,
-        officialScorers,
-        umpires
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.getJobsByType,
+        self.datacasters,
+        self.officialScorers,
+        self.umpires
     )}

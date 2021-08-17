@@ -15,9 +15,10 @@ class AwardsModel(MLBStatsAPIEndpointModel):
     def awardRecipients(self, **kwargs):
         return self.get_api_file_object(**kwargs)
 
-    _methods = {m.__name__: m for m in (
-        awards,
-        awardRecipients
+    @property
+    def _methods(self) -> dict: return {m.__name__: m for m in (
+        self.awards,
+        self.awardRecipients
     )}
 
     def run(self, **kwargs):

@@ -12,10 +12,7 @@ class BroadcastModel(MLBStatsAPIEndpointModel):
         return self.get_api_file_object(**kwargs)
 
     @property
-    def methods(self):
-        if self._methods is None:
-            self._methods = {m.__name__: m for m in (
-                self.getBroadcasts,
-            )}
-        return self._methods
+    def _methods(self): return {m.__name__: m for m in (
+        self.getBroadcasts,
+    )}
 

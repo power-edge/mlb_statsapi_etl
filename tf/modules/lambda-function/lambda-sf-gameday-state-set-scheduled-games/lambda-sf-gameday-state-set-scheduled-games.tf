@@ -108,7 +108,7 @@ resource "aws_lambda_function" "mlb_statsapi_states_gameday_set_scheduled_games_
     variables = {
       Description = "State to create Map of Games for Gameday"
       Env = var.env_name
-      MLB_STATSAPI_ETL__CONFIGS_PATH = "/opt/configs"
+      MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
     }
   }
 

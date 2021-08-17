@@ -22,7 +22,7 @@ def start_execution(event: dict):
     return StepFunctions(boto3.client('stepfunctions', region_name=event["region"])).start_execution(
         stateMachineArn=STATE_MACHINE_ARN,
         name=get_name(event),
-        _input=json.dumps({
+        input=json.dumps({
             "date": DATE
         })
     )
