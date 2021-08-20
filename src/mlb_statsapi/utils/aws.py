@@ -19,7 +19,7 @@ def check_response(func):
     def checker(self: AWSClient, *args, **kwargs):
         print(f"{func.__name__} {args=} {kwargs=}")
         res = func(self, *args, **kwargs)
-        assert res['ResponseMetadata']['HTTPStatusCode'] == 200, f"{func.__name__} failed: {str(res)}"
+        assert res['ResponseMetadata']['HTTPStatusCode'] // 100 == 2, f"{func.__name__} failed: {str(res)}"
         return res
     return checker
 
@@ -124,7 +124,7 @@ class StepFunctions(AWSClient):
 class SQS(AWSClient):
 
     @check_response
-    def delete_message(self, QueueUrl, ReceiptHandle: str, ):
+    def delete_message(self, QueueUrl, ReceiptHandle: str):
         return self._client.delete_message(QueueUrl=QueueUrl, ReceiptHandle=ReceiptHandle)
 
 
@@ -132,8 +132,8 @@ class SQS(AWSClient):
 class STS(AWSClient):
 
     @check_response
-    def assume_role(self, RoleArn, RoleSessionName, ExternalId=None):
-        return self._client.assume_role(RoleArn=RoleArn, RoleSessionName=RoleSessionName, ExternalId=ExternalId)
+    def assume_role(self, *args, **kwargs):
+        return self._client.assume_role(*args, **kwargs)
 
 
 if __name__ == "__main__":

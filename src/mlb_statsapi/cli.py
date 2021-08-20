@@ -79,13 +79,16 @@ def add_subparsers(parser):
         name = app.__name__
         app_parsers[name] = subparsers.add_parser(name)
 
-        # app_parsers[name].add_argument(
-        #     '-m',
-        #     '--methods',
-        #     nargs='+',
-        #     default=[*api.methods.keys()],
-        #     help='StatsAPI Model method filter. default is all.'
-        # )
+        app_parsers[name].add_argument(
+            '-m',
+            '--methods',
+            nargs='+',
+            type=list,
+            default=[*api.methods.keys()],
+            help='StatsAPI Model method filter. default is all.',
+        )
+
+    # "boxscore", "linescore", "liveGameV1", "liveGameDiffPatchV1", "playByPlay"
 
     Arguments.date(app_parsers['Schedule'].add_argument, True)
     Arguments.sportId(app_parsers['Schedule'].add_argument)
@@ -114,7 +117,8 @@ def Game(args: argparse.Namespace):
         date=args.date,
         gamePk=args.gamePk,
         startTime=args.startTime,
-        sportId=args.sportId
+        sportId=args.sportId,
+        methods=args.methods
     )
     if AWS_STEP_FUNCTIONS_TASK_TOKEN is None:
         return apps.Game.run(**kwargs)
@@ -126,7 +130,8 @@ def Schedule(args: argparse.Namespace):
     from mlb_statsapi import apps
     kwargs = dict(
         sportId=args.sportId,
-        date=args.date
+        date=args.date,
+        methods=args.methods
     )
     if AWS_STEP_FUNCTIONS_TASK_TOKEN is None:
         return apps.Schedule.run(**kwargs)
@@ -140,9 +145,7 @@ Apps = [
 ]
 
 
-def main():
-    args = parse_args()
-    # print("args: %s" % args)
+def main(args: argparse.Namespace):
     print(json.dumps({
         'Game': Game,
         'Schedule': Schedule
@@ -150,4 +153,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(parse_args()))

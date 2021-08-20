@@ -10,6 +10,21 @@ variable "AWSLambdaBasicExecutionRole-arn" {}
 variable "sf_mlb_statsapi_etl_season-arn" {}
 variable "sf_mlb_statsapi_etl_season-name" {}
 
+variable "sf_mlb_statsapi_etl_gameday-arn" {}
+variable "sf_mlb_statsapi_etl_gameday-name" {}
+
+variable "sf_mlb_statsapi_etl_pregame-name" {}
+variable "sf_mlb_statsapi_etl_pregame-arn" {}
+
+variable "sf_mlb_statsapi_etl_schedule-name" {}
+variable "sf_mlb_statsapi_etl_schedule-arn" {}
+
+variable "sf_mlb_statsapi_etl_game-arn" {}
+
+variable "sqs_mlb_statsapi_workflow-arn" {}
+variable "sqs_mlb_statsapi_workflow-id" {}
+variable "sqs_mlb_statsapi_workflow-name" {}
+
 
 locals {
   function_name = "mlb_statsapi-run_workflow"
@@ -106,6 +121,37 @@ resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_gameday_role__mlb
 }
 
 
+resource "aws_iam_policy" "mlb_statsapi_run_workflow_lambda_sqs_policy" {
+  name = "${local.function_name}-lambda_sqs_policy-${var.aws_region}"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sqs:*"
+        Resource = var.sqs_mlb_statsapi_workflow-arn
+      }
+    ]
+  })
+
+  depends_on = [
+    aws_cloudwatch_log_group.mlb_statsapi_run_workflow_lambda-Logs
+  ]
+}
+
+
+resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_gameday_role__mlb_statsapi_run_workflow_lambda_sqs_policy" {
+  //noinspection HILUnresolvedReference
+  policy_arn = aws_iam_policy.mlb_statsapi_run_workflow_lambda_sqs_policy.arn
+  role = aws_iam_role.mlb_statsapi_run_workflow_lambda_role.name
+  depends_on = [
+    aws_iam_policy.mlb_statsapi_run_workflow_lambda_sqs_policy,
+    aws_iam_role.mlb_statsapi_run_workflow_lambda_role
+  ]
+}
+
+
 resource "null_resource" "mlb_statsapi_run_workflow_lambda_zip" {
   triggers = {
     always_run = var.always_run
@@ -140,8 +186,14 @@ resource "aws_lambda_function" "mlb_statsapi_run_workflow_lambda" {
     variables = {
       Description = "Handler to call start-execution for various step functions."
       Env = var.env_name
+      REGION = var.aws_region
 //      MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
       MLB_STATSAPI__SEASON_SFN_ARN = var.sf_mlb_statsapi_etl_season-arn
+      MLB_STATSAPI__GAMEDAY_SFN_ARN = var.sf_mlb_statsapi_etl_gameday-arn
+      MLB_STATSAPI__PREGAME_SFN_ARN = var.sf_mlb_statsapi_etl_pregame-arn
+      MLB_STATSAPI__SCHEDULE_SFN_ARN = var.sf_mlb_statsapi_etl_schedule-arn
+      MLB_STATSAPI__GAME_SFN_ARN = var.sf_mlb_statsapi_etl_game-arn
+      MLB_STATSAPI__WORKFLOW_QUEUE_URL = var.sqs_mlb_statsapi_workflow-id
     }
   }
 
@@ -152,6 +204,7 @@ resource "aws_lambda_function" "mlb_statsapi_run_workflow_lambda" {
 }
 
 
+// Season
 resource "aws_cloudwatch_event_rule" "mlb_statsapi_season_event_rule" {
   name = "mlb_statsapi_season_event_rule-${var.aws_region}"
   description = "Yearly event to trigger the Season Workflow."
@@ -203,11 +256,75 @@ EOF
 
 
 resource "aws_lambda_permission" "allow_cloudwatch_season_event_to_call_run_workflow_lambda" {
-  statement_id = "AllowExecutionFromCloudWatch"
+  statement_id = "allow_cloudwatch_season_event_to_call_run_workflow_lambda"
   action = "lambda:InvokeFunction"
   function_name = local.function_name
   principal = "events.amazonaws.com"
   source_arn = aws_cloudwatch_event_rule.mlb_statsapi_season_event_rule.arn
+}
+
+
+// Gameday
+resource "aws_cloudwatch_event_rule" "mlb_statsapi_gameday_event_rule" {
+  name = "mlb_statsapi_gameday_event_rule-${var.aws_region}"
+  description = "Daily event to trigger the Gameday Workflow."
+  // Minutes, Hours, Day-of-month, Month, Day-of-week, Year
+//  schedule_expression = "cron(0/2 * * * ? *)"  # At every 5th minute (testing)
+  schedule_expression = "cron(0 8 * * ? *)"  # every day at 8am UTC
+
+  is_enabled = true
+}
+
+
+resource "aws_cloudwatch_event_target" "mlb_statsapi_gameday_event_target" {
+  rule = aws_cloudwatch_event_rule.mlb_statsapi_gameday_event_rule.name
+  target_id = "${local.function_name}-StartExecution-Gameday"
+  arn = aws_lambda_function.mlb_statsapi_run_workflow_lambda.arn
+  input_transformer {
+    input_paths = {
+    version = "$.version"
+    id = "$.id"
+    detail-type = "$.detail-type"
+    source = "$.source"
+    account = "$.account"
+    time = "$.time"
+    region = "$.region"
+    resources = "$.resources"
+    detail = "$.detail"
+    }
+    input_template = <<EOF
+{
+  "version": <version>,
+  "id": <id>,
+  "detail-type": <detail-type>,
+  "source": <source>,
+  "account": <account>,
+  "time": <time>,
+  "region": <region>,
+  "resources": <resources>,
+  "detail": <detail>,
+  "workflow": {
+    "name": "${var.sf_mlb_statsapi_etl_gameday-name}",
+    "arn": "${var.sf_mlb_statsapi_etl_gameday-arn}"
+  }
+}
+EOF
+  }
+}
+
+
+resource "aws_lambda_permission" "allow_cloudwatch_gameday_event_to_call_run_workflow_lambda" {
+  statement_id = "allow_cloudwatch_gameday_event_to_call_run_workflow_lambda"
+  action = "lambda:InvokeFunction"
+  function_name = local.function_name
+  principal = "events.amazonaws.com"
+  source_arn = aws_cloudwatch_event_rule.mlb_statsapi_gameday_event_rule.arn
+}
+
+//Consume from the workflow queue
+resource "aws_lambda_event_source_mapping" "mlb_statsapi_workflow_lambda_sqs_event_source_mapping" {
+  event_source_arn = var.sqs_mlb_statsapi_workflow-arn
+  function_name = aws_lambda_function.mlb_statsapi_run_workflow_lambda.arn
 }
 
 

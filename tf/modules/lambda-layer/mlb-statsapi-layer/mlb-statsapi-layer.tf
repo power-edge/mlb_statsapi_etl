@@ -13,10 +13,10 @@ resource "null_resource" "mlb_statsapi_layer_zip" {
   }
   provisioner "local-exec" {
     command = join("; ", [
+      "export ALWAYS_RUN=${var.always_run}",
       "cd tf/local-exec/lambda-layer",
       "export LAYER_NAME=${local.layer_name}",
       "export BUILD=${var.build_version}",
-      "export ALWAYS_RUN=${var.always_run}",
       "./zip.sh",
       "cd - || exit 1"
     ])

@@ -28,13 +28,24 @@ resource "aws_iam_policy" "mlb_statsapi_s3_data_bucket_service_policy" {
   name = "mlb_statsapi_s3_data_bucket_service_policy-${var.aws_region}"
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "s3:PutObject",
-      ]
-      Resource = "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.gz"
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket",
+        ]
+        Resource = "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.gz"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+        ]
+        Resource = aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn
+      }
+    ]
   })
 }
 

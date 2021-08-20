@@ -3,10 +3,15 @@ created by nikos at 8/10/21
 """
 import datetime
 import json
+import os
 import sys
 import uuid
 
-from .. import strf_game_date, strp_game_date, game_timestamp_format
+from mlb_statsapi.functions import strpdatetime, game_timestamp_format
+
+
+PREGAME_SFN_ARN = os.environ["MLB_STATSAPI__PREGAME_SFN_ARN"]
+
 
 def get_games(date: str) -> dict:
     from mlb_statsapi.model import StatsAPI
@@ -19,16 +24,23 @@ def get_games(date: str) -> dict:
             }
         ).get().obj["dates"]
     }[date]["games"]:
-        gameDate = strp_game_date(game["gameDate"])
+        gameDate = strpdatetime(game["gameDate"])
         game["startPregame"] = (gameDate - datetime.timedelta(hours=1)).isoformat()
         game["startTimestamp"] = gameDate.strftime(game_timestamp_format)
         game["uid"] = str(uuid.uuid4()).split('-')[0]
+        game["workflow"] = {
+            "name": PREGAME_SFN_ARN.split(":")[-1],
+            "arn": PREGAME_SFN_ARN
+        }
         yield game
-
 
 
 def lambda_handler(event: dict, context) -> bool:
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")
-    return [*get_games(event["date"])]
+    games = [*get_games(event["date"])]
+    return {
+        "firstPregame": min([g["startPregame"] for g in games]),
+        "games": games
+    }

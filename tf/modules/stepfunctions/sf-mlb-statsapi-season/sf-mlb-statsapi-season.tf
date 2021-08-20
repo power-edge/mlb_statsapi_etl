@@ -4,7 +4,9 @@ variable "aws_region" {}
 variable "env_name" {}
 
 variable "cloudwatch_logs_delivery_full_access_policy-arn" {}
-variable "sns_mlb_statsapi_event_arn" {}
+variable "sns_mlb_statsapi_event-arn" {}
+
+variable "mlb_statsapi_sns_publish_event_policy-arn" {}
 
 locals {
   sf_mlb_statsapi_etl_season = "mlb_statsapi_etl_season"
@@ -12,7 +14,7 @@ locals {
 
 
 resource "aws_iam_role" "sf_mlb_statsapi_etl_season_role" {
-  name = "${local.sf_mlb_statsapi_etl_season}-role-${var.aws_region}"
+  name = "sfn-${local.sf_mlb_statsapi_etl_season}-role-${var.aws_region}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -34,30 +36,10 @@ resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_season_role__clou
 }
 
 
-resource "aws_iam_policy" "mlb_statsapi_sns_publish_event_policy" {
-  name = "mlb_statsapi_sns_publish_event_policy-${var.aws_region}"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = "sns:Publish"
-        Resource = var.sns_mlb_statsapi_event_arn
-      }
-    ]
-  })
-}
-
-
 resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_season_role__mlb_statsapi_sns_publish_event_policy" {
   //noinspection HILUnresolvedReference
-  policy_arn = aws_iam_policy.mlb_statsapi_sns_publish_event_policy.arn
+  policy_arn = var.mlb_statsapi_sns_publish_event_policy-arn
   role = aws_iam_role.sf_mlb_statsapi_etl_season_role.name
-}
-
-
-output "mlb_statsapi_sns_publish_event_policy-arn" {
-  value = aws_iam_policy.mlb_statsapi_sns_publish_event_policy.arn
 }
 
 
@@ -81,8 +63,8 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_season" {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "TopicArn": "${var.sns_mlb_statsapi_event_arn}",
-        "Message.$": "States.JsonToString($.message)",
+        "TopicArn": "${var.sns_mlb_statsapi_event-arn}",
+        "Message.$": "States.JsonToString($.season.message)",
         "MessageAttributes": {
           "Sport": {
             "DataType": "String",
@@ -95,7 +77,6 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_season" {
   }
 }
 DEFINITION
-
 
   logging_configuration {
     //noinspection HILUnresolvedReference

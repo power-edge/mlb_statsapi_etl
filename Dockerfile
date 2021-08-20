@@ -30,4 +30,4 @@ RUN python -m pip install -e /app/mlb_statsapi_etl
 
 ENTRYPOINT ["mlb_statsapi_etl/docker/entrypoint.sh"]
 
-CMD ["python", "mlb_statsapi_etl/src/mlb_statsapi/cli.py"]
+CMD ["python", "-u", "mlb_statsapi_etl/src/mlb_statsapi/cli.py"]

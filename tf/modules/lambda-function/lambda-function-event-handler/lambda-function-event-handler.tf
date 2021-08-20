@@ -31,7 +31,15 @@ resource "aws_iam_role" "mlb_statsapi_event_handler_lambda_role" {
         Principal = {
           Service = "lambda.amazonaws.com"
         }
+      },
+      {
+        Effect = "Allow"
+        Action = "sts:AssumeRole"
+        Principal = {
+          AWS = "arn:aws:iam::${var.aws_account}:user/nikolauspschuetz"
+        }
       }
+
     ]
   })
 }
@@ -126,8 +134,8 @@ resource "null_resource" "mlb_statsapi_event_handler_lambda_zip" {
   provisioner "local-exec" {
     //noinspection HILUnresolvedReference
     command = join("; ", [
-      "cd tf/local-exec/lambda-function",
       "export ALWAYS_RUN=${var.always_run}",
+      "cd tf/local-exec/lambda-function",
       "export HANDLER_FILE=${local.handler_file}",
       "./zip.sh ${local.function_name} ${var.build_version}",
       "cd - || exit 1"
@@ -144,6 +152,8 @@ resource "aws_lambda_function" "mlb_statsapi_event_handler_lambda" {
   runtime = "python3.8"
   memory_size = 256
   timeout = 10
+
+  reserved_concurrent_executions = 3
 
   layers = [
     var.mlb_statsapi_lambda_layer_arn

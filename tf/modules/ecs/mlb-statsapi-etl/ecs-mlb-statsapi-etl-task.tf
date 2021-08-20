@@ -8,7 +8,7 @@ variable "build_version" {}
 variable "mlb_statsapi_etl_image-repository_name" {}
 
 variable "mlb_statsapi_s3_data_bucket_service_policy-arn" {}
-
+variable "mlb_statsapi_sns_publish_event_policy-arn" {}
 
 locals {
   repository_name = "mlb-statsapi-etl"
@@ -37,7 +37,6 @@ output "ecs_cluster_mlb_statsapi_etl-arn" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_cluster_mlb_statsapi_etl-Logs" {
-  //noinspection HILUnresolvedReference
   name = "/ecs/${aws_ecs_cluster.ecs_cluster_mlb_statsapi_etl.name}"
   retention_in_days = 7
 }
@@ -57,6 +56,12 @@ resource "aws_iam_role" "ecs_mlb_statsapi_etl-taskRole" {
       }
     ]
   })
+}
+
+
+resource "aws_iam_role_policy_attachment" "sf_mlb_statsapi_etl_game_role__ecs_mlb_statsapi_etl-taskRole-attachment" {
+  policy_arn = var.mlb_statsapi_sns_publish_event_policy-arn
+  role = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.name
 }
 
 
@@ -201,9 +206,9 @@ resource "aws_ecs_task_definition" "ecs_task_definition_mlb_statsapi_etl" {
     }
   },
   "portMappings": [],
-  "cpu": 512,
-  "memory": 1024,
-  "memoryReservation": 512,
+  "cpu": 256,
+  "memory": 512,
+  "memoryReservation": 256,
   "environment": [],
   "volumesFrom": [],
   "image": "${var.aws_account}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.mlb_statsapi_etl_image-repository_name}:${var.build_version}",
@@ -211,22 +216,26 @@ resource "aws_ecs_task_definition" "ecs_task_definition_mlb_statsapi_etl" {
   "name": "${var.mlb_statsapi_etl_image-repository_name}"
 }]
   DEFINITION
+
   family = var.mlb_statsapi_etl_image-repository_name
-  //noinspection HILUnresolvedReference
+
   execution_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.arn
-  memory = 1024
-  //noinspection HILUnresolvedReference
   task_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.arn
+
+  cpu = 256
+  memory = 512
+
+  network_mode = "awsvpc"
   requires_compatibilities = [
     "FARGATE"
   ]
-  network_mode = "awsvpc"
-  cpu = 512
+
   depends_on = [
     aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole,
     aws_iam_role.ecs_mlb_statsapi_etl-taskRole
   ]
 }
+
 
 output "ecs_task_definition_mlb_statsapi_etl-arn" {
   value = aws_ecs_task_definition.ecs_task_definition_mlb_statsapi_etl.arn

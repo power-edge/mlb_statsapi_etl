@@ -4,6 +4,8 @@ variable "always_run" {}
 variable "aws_region" {}
 variable "mlb_statsapi_lambda_layer_arn" {}
 variable "AWSLambdaBasicExecutionRole-arn" {}
+variable "sf_mlb_statsapi_etl_pregame-arn" {}
+variable "sqs_mlb_statsapi_workflow-id" {}
 
 
 locals {
@@ -109,6 +111,8 @@ resource "aws_lambda_function" "mlb_statsapi_states_gameday_set_scheduled_games_
       Description = "State to create Map of Games for Gameday"
       Env = var.env_name
       MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
+      MLB_STATSAPI__PREGAME_SFN_ARN = var.sf_mlb_statsapi_etl_pregame-arn
+      MLB_STATSAPI__WORKFLOW_QUEUE_URL = var.sqs_mlb_statsapi_workflow-id
     }
   }
 

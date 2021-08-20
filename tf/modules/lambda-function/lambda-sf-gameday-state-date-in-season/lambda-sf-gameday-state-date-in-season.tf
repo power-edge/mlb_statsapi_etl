@@ -93,8 +93,8 @@ resource "null_resource" "mlb_statsapi_states_gameday_date_in_season_lambda_zip"
   provisioner "local-exec" {
     //noinspection HILUnresolvedReference
     command = join("; ", [
-      "cd tf/local-exec/lambda-function",
       "export ALWAYS_RUN=${var.always_run}",
+      "cd tf/local-exec/lambda-function",
       "export HANDLER_FILE=${local.handler_file}",
       "./zip.sh ${local.function_name} ${var.build_version}",
       "cd - || exit 1"

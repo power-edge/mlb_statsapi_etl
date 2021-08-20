@@ -205,8 +205,8 @@ resource "aws_cloudwatch_event_target" "mlb_statsapi_etl_gameday_event_target" {
 }
 
 
-resource "aws_lambda_permission" "allow_cloudwatch_to_call_mlb_statsapi_triggers_gameday_start_execution_lambda" {
-  statement_id = "AllowExecutionFromCloudWatch"
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_mlb_statsapi_gameday_start_execution_lambda" {
+  statement_id = "allow_cloudwatch_to_call_mlb_statsapi_gameday_start_execution_lambda"
   action = "lambda:InvokeFunction"
   function_name = local.function_name
   principal = "events.amazonaws.com"

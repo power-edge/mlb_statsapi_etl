@@ -43,6 +43,14 @@ def refresh(sch: StatsAPIObject, date: str) -> bool:
     return True
 
 
+def cycle(sch):
+    old = sch.dumps()
+    new = sch.get().dumps()
+    if old != new:
+        sch.gzip()
+        sch.upload_file()
+
+
 def run(**kwargs):
     """
     get the schedule and save it if it changed,
@@ -50,13 +58,12 @@ def run(**kwargs):
     from mlb_statsapi.model import StatsAPI
     sportId = kwargs["sportId"]
     date = kwargs["date"]
+    methods = kwargs["methods"]
     sch = StatsAPI.Schedule.schedule(query_params={"sportId": sportId, "date": date})
+
     while refresh(sch, date):
-        old = sch.dumps()
-        new = sch.get().dumps()
-        if old != new:
-            sch.gzip()
-            sch.upload_file()
+        cycle(sch)
+    cycle(sch)
     return {
         "date": date,
         "sportId": sportId,

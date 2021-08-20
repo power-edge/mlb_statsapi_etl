@@ -5,20 +5,27 @@ import datetime
 import json
 import sys
 
-from .. import strpdate
+from mlb_statsapi.functions import strpdate
 
 
-def lambda_handler(event: dict, context) -> bool:
-    print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
-    print('event', json.dumps(event))
-    sys.path.append("/opt")
-    from mlb_statsapi.model import StatsAPI
+def date_has_games(schedule: callable, date: str) -> bool:
+    sch = schedule(
+        query_params={
+            "sportId": 1,
+            "date": date
+        }
+    ).get()
+    return bool(len(sch.obj["dates"]) and len({d["date"]: d for d in sch.obj["dates"]}[date]["games"]))
+
+
+def date_in_season(season: callable, event: dict) -> bool:
+
     date = strpdate(event["date"])
     seasonType = event.get("seasonType", "season")
     assert seasonType in {"season", "regularSeason", "preSeason", "postSeason",}
     season = {
         int(s["seasonId"]): s
-        for s in StatsAPI.Season.season(
+        for s in season(
             path_params={"seasonId": date.year},
             query_params={"sportId": 1}
         ).get().obj["seasons"]
@@ -26,3 +33,11 @@ def lambda_handler(event: dict, context) -> bool:
     start, end = strpdate(season[f"{seasonType}StartDate"]), strpdate(season[f"{seasonType}EndDate"])
     print(f"date_in_season: {start=} <= {date=} <= {end=}")
     return start <= date <= end
+
+
+def lambda_handler(event: dict, context) -> bool:
+    print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
+    print('event', json.dumps(event))
+    sys.path.append("/opt")
+    from mlb_statsapi.model import StatsAPI
+    return date_in_season(StatsAPI.Season.season, event) and date_has_games(StatsAPI.Schedule.schedule, event["date"])
