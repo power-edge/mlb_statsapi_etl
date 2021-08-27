@@ -5,7 +5,7 @@ import boto3
 import json
 import os
 import sys
-import traceback
+# noinspection PyPackageRequirements
 from botocore.exceptions import ClientError
 
 Env = os.environ["Env"]
@@ -45,7 +45,9 @@ def upload_file(method, path_params: dict = None, query_params: dict = None, for
     return res
 
 
+# noinspection PyPep8Naming
 def process_record(StatsAPI, sqs, record):
+    # todo: use sqs client to process records into the deadletter queue?
     print(f"process_record: {record=}")
     body = json.loads(record['body'])
     Message = json.loads(body['Message'])
@@ -65,6 +67,7 @@ def process_record(StatsAPI, sqs, record):
 
 
 def process_event(event, context):
+    # todo: use context log details in processing the message
     from mlb_statsapi.model import StatsAPI
     from mlb_statsapi.utils.aws import SQS
     sqs = SQS(boto3.client('sqs', region_name=REGION))
@@ -75,7 +78,7 @@ def process_event(event, context):
     return response
 
 
-def lambda_handler(event: dict, context) -> bool:
+def lambda_handler(event: dict, context):
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")

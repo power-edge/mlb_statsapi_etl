@@ -7,20 +7,21 @@ import os
 import sys
 from datetime import datetime
 
-from mlb_statsapi.functions import strpdate, strpdatetime, strfdatetime, YmdTHMSz_format
+from mlb_statsapi.functions import strpdate, strfdatetime, YmdTHMSz_format
 
 REGION = os.environ['REGION']
 WORKFLOW_QUEUE_URL = os.environ["MLB_STATSAPI__WORKFLOW_QUEUE_URL"]
 
-GAMEDAY_SFN_ARN  = os.environ["MLB_STATSAPI__GAMEDAY_SFN_ARN"]
-SEASON_SFN_ARN   = os.environ["MLB_STATSAPI__SEASON_SFN_ARN"]
-PREGAME_SFN_ARN  = os.environ["MLB_STATSAPI__PREGAME_SFN_ARN"]
+GAMEDAY_SFN_ARN = os.environ["MLB_STATSAPI__GAMEDAY_SFN_ARN"]
+SEASON_SFN_ARN = os.environ["MLB_STATSAPI__SEASON_SFN_ARN"]
+PREGAME_SFN_ARN = os.environ["MLB_STATSAPI__PREGAME_SFN_ARN"]
 SCHEDULE_SFN_ARN = os.environ["MLB_STATSAPI__SCHEDULE_SFN_ARN"]
-GAME_SFN_ARN     = os.environ["MLB_STATSAPI__GAME_SFN_ARN"]
+GAME_SFN_ARN = os.environ["MLB_STATSAPI__GAME_SFN_ARN"]
 
 
 class WorkflowInput:
 
+    # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_game(cls, event, context):
         workflowName = event["workflow"]["name"]
@@ -39,6 +40,7 @@ class WorkflowInput:
             })
         }
 
+    # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_schedule(cls, event, context):
         workflowName = event["workflow"]["name"]
@@ -56,6 +58,7 @@ class WorkflowInput:
             })
         }
 
+    # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_pregame(cls, event, context):
         workflowName = event["workflow"]["name"]
@@ -80,7 +83,7 @@ class WorkflowInput:
             })
         }
 
-
+    # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_gameday(cls, event, context):
         workflowName = event["workflow"]["name"]
@@ -113,6 +116,7 @@ class WorkflowInput:
             })
         }
 
+    # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_season(cls, event, context):
         workflowName = event["workflow"]["name"]
@@ -143,7 +147,7 @@ class WorkflowInput:
         }
 
 
-
+# noinspection PyPep8Naming
 def start_execution(event: dict, context):
     from mlb_statsapi.utils.aws import StepFunctions
     workflowArn = event["workflow"]["arn"]
@@ -160,6 +164,7 @@ def start_execution(event: dict, context):
     )
 
 
+# noinspection PyPep8Naming
 def parse_record(record: dict) -> dict:
     timestamp = datetime.fromtimestamp(int(record["attributes"]["SentTimestamp"]) / 1e3)
     body = json.loads(record["body"])
@@ -178,7 +183,7 @@ def parse_record(record: dict) -> dict:
     }
 
 
-def lambda_handler(event: dict, context) -> bool:
+def lambda_handler(event: dict, context):
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")
@@ -202,4 +207,3 @@ def lambda_handler(event: dict, context) -> bool:
         }]
 
     return res
-
