@@ -11,8 +11,7 @@ variable "sns_mlb_statsapi_workflow-arn" {}
 variable "sns_mlb_statsapi_pregame_forecast-arn" {}
 
 variable "mlb_statsapi_s3_data_bucket" {}
-variable "sn_pub_a0_id" {}
-variable "sn_pub_b0_id" {}
+variable "subnet_public_ids" {}
 
 variable "mlb_statsapi_etl_image-repository_name" {}
 variable "ecs_task_definition_mlb_statsapi_etl-arn" {}

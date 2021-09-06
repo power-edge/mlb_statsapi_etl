@@ -63,10 +63,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_pregame" {
             "SecurityGroups": [
               "${var.mlb_statsapi_sg-id}"
             ],
-            "Subnets": [
-              "${var.sn_pub_a0_id}",
-              "${var.sn_pub_b0_id}"
-            ]
+            "Subnets": ${jsonencode(var.subnet_public_ids)}
           }
         },
         "Overrides": {
@@ -121,10 +118,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_pregame" {
             "SecurityGroups": [
               "${var.mlb_statsapi_sg-id}"
             ],
-            "Subnets": [
-              "${var.sn_pub_a0_id}",
-              "${var.sn_pub_b0_id}"
-            ]
+            "Subnets": ${jsonencode(var.subnet_public_ids)}
           }
         },
         "Overrides": {

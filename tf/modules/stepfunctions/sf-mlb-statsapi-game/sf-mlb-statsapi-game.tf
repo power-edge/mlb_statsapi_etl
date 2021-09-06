@@ -30,10 +30,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_game" {
           "SecurityGroups": [
             "${var.mlb_statsapi_sg-id}"
           ],
-          "Subnets": [
-            "${var.sn_pub_a0_id}",
-            "${var.sn_pub_b0_id}"
-          ]
+          "Subnets": ${jsonencode(var.subnet_public_ids)}
         }
       },
       "Overrides": {

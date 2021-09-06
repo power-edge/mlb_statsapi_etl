@@ -15,8 +15,8 @@ variable "mlb_statsapi_etl_image-repository_name" {}
 variable "sf_mlb_statsapi_etl_runTask_policy-arn" {}
 
 variable "mlb_statsapi_sg-id" {}
-variable "sn_pub_a0_id" {}
-variable "sn_pub_b0_id" {}
+variable "subnet_public_ids" {}
+
 
 locals {
   sf_mlb_statsapi_etl_game = "mlb_statsapi_etl_game"

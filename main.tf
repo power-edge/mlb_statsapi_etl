@@ -4,11 +4,7 @@ variable "aws_region" {}
 variable "aws_account" {}
 variable "project_name" {}
 
-variable "vpc_cidr_block" {}
-variable "sn_prv_a0_cidr_block" {}
-variable "sn_prv_b0_cidr_block" {}
-variable "sn_pub_a0_cidr_block" {}
-variable "sn_pub_b0_cidr_block" {}
+variable "vpc_cidr_b" {}
 
 // always_run for local-exec
 variable "always_run-ecr-mlb-statsapi-etl-build" {}
@@ -63,11 +59,13 @@ module "iam-logs-delivery-full-access-policy" {
 }
 
 
+/*
 module "s3-code-bucket" {
     source = "./tf/modules/s3/s3-code-bucket"
     env_name = var.env_name
     aws_region = var.aws_region
 }
+*/
 
 
 module "s3-data-bucket" {
@@ -85,11 +83,7 @@ module "mlb-statsapi-vpc" {
     aws_account = var.aws_account
     aws_region = var.aws_region
 
-    vpc_cidr_block = var.vpc_cidr_block
-    sn_prv_a0_cidr_block = var.sn_prv_a0_cidr_block
-    sn_prv_b0_cidr_block = var.sn_prv_b0_cidr_block
-    sn_pub_a0_cidr_block = var.sn_pub_a0_cidr_block
-    sn_pub_b0_cidr_block = var.sn_pub_b0_cidr_block
+    cidr_b = var.vpc_cidr_b
 }
 
 module "mlb-statsapi-event-notification" {
@@ -177,8 +171,7 @@ module "sf-mlb-statsapi-game" {
     sf_mlb_statsapi_etl_runTask_policy-arn = module.iam-sf_mlb_statsapi_etl_runTask-policy.sf_mlb_statsapi_etl_runTask_policy-arn
 
     mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
-    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
-    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
+    subnet_public_ids = module.mlb-statsapi-vpc.subnet-public-ids
 
     ecs_task_definition_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_task_definition_mlb_statsapi_etl-arn
     ecs_cluster_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_cluster_mlb_statsapi_etl-arn
@@ -271,8 +264,7 @@ module "sf-mlb-statsapi-pregame" {
     sf_mlb_statsapi_etl_game-arn = module.sf-mlb-statsapi-game.sf_mlb_statsapi_etl_game-arn
 
     mlb_statsapi_s3_data_bucket = module.s3-data-bucket.mlb_statsapi_s3_data_bucket
-    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
-    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
+    subnet_public_ids = module.mlb-statsapi-vpc.subnet-public-ids
     mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
     mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
     ecs_cluster_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_cluster_mlb_statsapi_etl-arn
@@ -323,8 +315,7 @@ module "sf-mlb-statsapi-schedule" {
     sf_mlb_statsapi_etl_runTask_policy-arn = module.iam-sf_mlb_statsapi_etl_runTask-policy.sf_mlb_statsapi_etl_runTask_policy-arn
 
     mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
-    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
-    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
+    subnet_public_ids = module.mlb-statsapi-vpc.subnet-public-ids
 
     mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
 
@@ -460,7 +451,7 @@ module "lambda-function-event-handler" {
 output "env_name" {value = var.env_name}
 output "aws_region" {value = var.aws_region}
 output "project_name" {value = var.project_name}
-output "vpc_cidr_block" {value = var.vpc_cidr_block}
+output "vpc_cidr_b" {value = var.vpc_cidr_b}
 output "always_run-ecr-mlb-statsapi-etl-build" {value = local.always_run-ecr-mlb-statsapi-etl-build}
 output "always_run-ecr-mlb-statsapi-etl-push" {value = local.always_run-ecr-mlb-statsapi-etl-push}
 output "always_run-lambda-layer-mlb-statsapi" {value = local.always_run-lambda-layer-mlb-statsapi}

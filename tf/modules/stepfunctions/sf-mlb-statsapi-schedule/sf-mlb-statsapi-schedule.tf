@@ -6,8 +6,7 @@ variable "env_name" {}
 variable "cloudwatch_logs_delivery_full_access_policy-arn" {}
 
 variable "mlb_statsapi_sg-id" {}
-variable "sn_pub_b0_id" {}
-variable "sn_pub_a0_id" {}
+variable "subnet_public_ids" {}
 
 variable "mlb_statsapi_etl_image-repository_name" {}
 variable "ecs_task_definition_mlb_statsapi_etl-arn" {}
@@ -84,10 +83,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_schedule" {
           "SecurityGroups": [
             "${var.mlb_statsapi_sg-id}"
           ],
-          "Subnets": [
-            "${var.sn_pub_a0_id}",
-            "${var.sn_pub_b0_id}"
-          ]
+          "Subnets": ${jsonencode(var.subnet_public_ids)}
         }
       },
       "Overrides": {

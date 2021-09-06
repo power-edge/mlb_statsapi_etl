@@ -6,25 +6,19 @@ aws_account = 623650261134
 
 project_name = "mlb-statsapi-etl"
 
-vpc_cidr_block = "10.42.0.0/16"
+vpc_cidr_b = 42
 
-sn_prv_a0_cidr_block = "10.42.0.0/24"
-sn_prv_b0_cidr_block = "10.42.1.0/24"
+always_run-ecr-mlb-statsapi-etl-build = "2021-09-06T02:43:03Z"
+always_run-ecr-mlb-statsapi-etl-push = "2021-09-06T02:43:03Z"
 
-sn_pub_a0_cidr_block = "10.42.3.0/24"
-sn_pub_b0_cidr_block = "10.42.4.0/24"
+always_run-lambda-layer-mlb-statsapi = "2021-09-06T02:43:03Z"
 
-always_run-ecr-mlb-statsapi-etl-build = "2021-09-05T02:30:53Z"
-always_run-ecr-mlb-statsapi-etl-push = "2021-09-05T02:30:53Z"
+always_run-lambda-function-run-workflow = "2021-09-06T02:43:03Z"
+always_run-lambda-function-event-handler = "2021-09-06T02:43:03Z"
 
-always_run-lambda-layer-mlb-statsapi = "2021-08-19T02:21:24Z"
+always_run-lambda-sf-season-state-set-season = "2021-09-06T02:43:03Z"
 
-always_run-lambda-function-run-workflow = ""
-always_run-lambda-function-event-handler = ""
+always_run-lambda-sf-gameday-state-date-in-season = "2021-09-06T02:43:03Z"
+always_run-lambda-sf-gameday-state-set-scheduled-games = "2021-09-06T02:43:03Z"
 
-always_run-lambda-sf-season-state-set-season = ""
-
-always_run-lambda-sf-gameday-state-date-in-season = ""
-always_run-lambda-sf-gameday-state-set-scheduled-games = ""
-
-always_run-lambda-sf-pregame-state-set-game = ""
+always_run-lambda-sf-pregame-state-set-game = "2021-09-06T02:43:03Z"
