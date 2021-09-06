@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import boto3
 
-from mlb_statsapi.utils.aws import AWS_REGION, StepFunctions
+from mlb_statsapi.utils.aws import AWS_REGION
 from tests.mlb_statsapi.functions import LambdaTestCase
 
 ACCOUNT = boto3.client('sts').get_caller_identity()["Account"]
@@ -21,7 +21,6 @@ os.environ["MLB_STATSAPI__GAME_SFN_ARN"] = SFN % "game"
 print("using AWS_PROFILE", os.environ["AWS_PROFILE"])
 
 
-# eue-url https://sqs.us-west-2.amazonaws.com/623650261134/mlb-statsapi-workflow-us-west-2
 def test_run_workflow(func: callable) -> callable:
     def run(self, *args, **kwargs):
         workflow = func.__name__.lstrip("test_run_")
@@ -63,6 +62,19 @@ class TestRunWorkflow(LambdaTestCase):
         # for arn in arns:
         #     sfn.stop_execution(executionArn=arn)
         #     print("test_run_mlb_statsapi_etl_gameday stopped", arn)
+
+    @test_run_workflow
+    def test_run_mlb_statsapi_etl_pregame(self):
+        arns = []
+        with patch('mlb_statsapi.functions.run_workflow.delete_message', return_value=None):
+            print(json.dumps(self.event))
+            execution = super(TestRunWorkflow, self).test_lambda_handler()
+            print("test_run_mlb_statsapi_etl_pregame started", json.dumps(execution, indent=2))
+            arns.extend([exe["executionArn"] for exe in execution])
+        sfn = boto3.client("stepfunctions", region_name=AWS_REGION)
+        for arn in arns:
+            sfn.stop_execution(executionArn=arn)
+            print("test_run_mlb_statsapi_etl_schedule stopped", arn)
 
     def test_lambda_handler(self):
         pass
