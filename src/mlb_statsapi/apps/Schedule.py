@@ -7,6 +7,7 @@ import traceback
 
 from time import sleep
 
+import utils.stats_api_object
 from mlb_statsapi.utils.stats_api_object import StatsAPIObject
 
 
@@ -17,6 +18,7 @@ def get_games(sch: StatsAPIObject, date: str) -> list:
     return [g for d in sch.obj["dates"] for g in d["games"] if d["date"] == date]
 
 
+# noinspection PyPep8Naming
 def refresh(sch: StatsAPIObject, date: str) -> bool:
     if sch.obj is None:
         return True
@@ -27,15 +29,15 @@ def refresh(sch: StatsAPIObject, date: str) -> bool:
     sleepFor = 0
     if Live in abstractGameStates:
         sleepFor = 60 * 1
-        print(f"{apiName=} abstractGameStates are {Live}, {sleepFor=}")
+        sch.log.info(f"{apiName=} abstractGameStates are {Live}, {sleepFor=}")
     elif Preview in abstractGameStates:
         sleepFor = 60 * 15
-        print(f"{apiName=} abstractGameStates are in {Preview}, {sleepFor=}")
+        sch.log.info(f"{apiName=} abstractGameStates are in {Preview}, {sleepFor=}")
     elif Other in abstractGameStates:
         sleepFor = 60 * 5
-        print(f"{apiName=} abstractGameStates are in {Other}, {sleepFor=}")
+        sch.log.info(f"{apiName=} abstractGameStates are in {Other}, {sleepFor=}")
     elif {Final,} == abstractGameStates:
-        print(f"{apiName=} abstractGameStates are all {Final}, {sleepFor=}")
+        sch.log.info(f"{apiName=} abstractGameStates are all {Final}, {sleepFor=}")
         return False
     else:
         raise ValueError(f"{apiName} {abstractGameStates=} not recognized from {[Preview, Live, Final, Other]}")
@@ -51,6 +53,7 @@ def cycle(sch):
         sch.upload_file()
 
 
+# noinspection PyPep8Naming
 def run(**kwargs):
     """
     get the schedule and save it if it changed,
@@ -58,14 +61,31 @@ def run(**kwargs):
     from mlb_statsapi.model import StatsAPI
     sportId = kwargs["sportId"]
     date = kwargs["date"]
-    methods = kwargs["methods"]
-    sch = StatsAPI.Schedule.schedule(query_params={"sportId": sportId, "date": date})
-
+    method = kwargs["method"]
+    sch: StatsAPIObject = StatsAPI.Schedule.schedule(query_params={"sportId": sportId, "date": date})
     while refresh(sch, date):
         cycle(sch)
     cycle(sch)
     return {
+        "method": method,
         "date": date,
         "sportId": sportId,
+        "games": [
+            {
+                "gamePk": game["gamePk"],
+                "link": game["link"],
+                "gameType": game["gameType"],
+                "season": game["season"],
+                "gameDate": game["gameDate"],
+                "officialDate": game["officialDate"],
+                "status": {
+                    "abstractGameState": game["status"]["abstractGameState"],
+                    "statusCode": game["status"]["statusCode"]
+                },
+                "venue": game["venue"],
+                "teams": {half: team["team"] for half, team in game["teams"].items()}
+            } for game in get_games(sch, date)
+        ],
+        "file": sch.gz_path,
         "size": os.path.getsize(sch.gz_path)
     }

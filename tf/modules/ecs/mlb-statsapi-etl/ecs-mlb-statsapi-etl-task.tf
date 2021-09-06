@@ -222,8 +222,8 @@ resource "aws_ecs_task_definition" "ecs_task_definition_mlb_statsapi_etl" {
   execution_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskExecutionRole.arn
   task_role_arn = aws_iam_role.ecs_mlb_statsapi_etl-taskRole.arn
 
-  cpu = 256
-  memory = 512
+  cpu = 1024
+  memory = 2048
 
   network_mode = "awsvpc"
   requires_compatibilities = [

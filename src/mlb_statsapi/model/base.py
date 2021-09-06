@@ -1,14 +1,13 @@
 """
 created by nikos at 4/21/21
 """
-import abc
 import json
 import os
 from serde import Model, fields, tags
 
-from ..utils import CONFIGS_PATH
-from ..utils.log import LogMixin
-from ..utils.stats_api_object import StatsAPIObject
+from mlb_statsapi.utils import CONFIGS_PATH
+from mlb_statsapi.utils.log import LogMixin
+from mlb_statsapi.utils.stats_api_object import StatsAPIObject
 
 
 __beta_stats_api_default_version__ = '1.0'
@@ -171,7 +170,3 @@ class MLBStatsAPIEndpointModel(MLBStatsAPIModel, LogMixin):
     def methods(self):
         assert self._methods is not None, 'please define methods for %s' % self.get_name()
         return self._methods
-
-    @abc.abstractmethod
-    def run(self, **kwargs):
-        raise NotImplementedError("define a run method")

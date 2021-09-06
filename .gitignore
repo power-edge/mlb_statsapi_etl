@@ -113,3 +113,4 @@ ENV/
 
 /.terraform**
 /tf/local-exec/lambda-**/**.zip
+/tfplan

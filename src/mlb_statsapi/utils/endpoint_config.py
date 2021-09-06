@@ -5,6 +5,7 @@ import yaml
 
 from . import CONFIGS_PATH
 
+
 class EndpointConfig(object):
     _instance = None
     config = None

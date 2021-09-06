@@ -162,8 +162,8 @@ resource "aws_lambda_function" "mlb_statsapi_event_handler_lambda" {
   environment {
     variables = {
       Description = "Lambda handler to consume from the mlb-statsapi-event queue."
-      Env = var.env_name
-      REGION = var.aws_region
+      MLB_STATSAPI__ENV = var.env_name
+      MLB_STATSAPI__REGION = var.aws_region
       MLB_STATSAPI__BASE_FILE_PATH = "/tmp/.var/mlb_statsapi"
       MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
       MLB_STATSAPI__EVENT_QUEUE_URL = var.sqs_mlb_statsapi_event-id

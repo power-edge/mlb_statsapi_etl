@@ -7,12 +7,12 @@ import os
 import sys
 import uuid
 
-from mlb_statsapi.functions import strpdatetime, game_timestamp_format
-
+from mlb_statsapi.utils import game_timestamp_format, strpdatetime
 
 PREGAME_SFN_ARN = os.environ["MLB_STATSAPI__PREGAME_SFN_ARN"]
 
 
+# noinspection PyPep8Naming
 def get_games(date: str) -> dict:
     from mlb_statsapi.model import StatsAPI
     for game in {
@@ -35,7 +35,7 @@ def get_games(date: str) -> dict:
         yield game
 
 
-def lambda_handler(event: dict, context) -> bool:
+def lambda_handler(event: dict, context) -> dict:
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")

@@ -1,15 +1,17 @@
 """
 created by nikos at 8/5/21
 """
+import uuid
+
 import boto3
 import json
 import os
 import sys
 from datetime import datetime
 
-from mlb_statsapi.functions import strpdate, strfdatetime, YmdTHMSz_format
+from mlb_statsapi.utils.aws import AWS_REGION, SQS
+from mlb_statsapi.utils import YmdTHMSz_format, strpdate, strfdatetime
 
-REGION = os.environ['REGION']
 WORKFLOW_QUEUE_URL = os.environ["MLB_STATSAPI__WORKFLOW_QUEUE_URL"]
 
 GAMEDAY_SFN_ARN = os.environ["MLB_STATSAPI__GAMEDAY_SFN_ARN"]
@@ -21,6 +23,8 @@ GAME_SFN_ARN = os.environ["MLB_STATSAPI__GAME_SFN_ARN"]
 
 class WorkflowInput:
 
+    eid = str(uuid.uuid4()).split("-")[-1]
+
     # noinspection PyPep8Naming
     @classmethod
     def mlb_statsapi_etl_game(cls, event, context):
@@ -30,7 +34,7 @@ class WorkflowInput:
         gamePk = game["gamePk"]
         startTimestamp = game["startTimestamp"]
         return {
-            "name": f"{workflowName}-{gamePk}-{startTimestamp}-{uid}",
+            "name": f"{workflowName}-{gamePk}-{startTimestamp}-{uid}-{cls.eid}",
             "input": json.dumps({
                 "game": game,
                 "context": {
@@ -45,10 +49,10 @@ class WorkflowInput:
     def mlb_statsapi_etl_schedule(cls, event, context):
         workflowName = event["workflow"]["name"]
         uid = event["id"].split("-")[-1]
-        date = event["time"].split("T")[0]
+        date = event["message"]["query_params"]["date"]
         date_nodash = date.replace("-", "")
         return {
-            "name": f"{workflowName}-{date_nodash}-{uid}",
+            "name": f"{workflowName}-{date_nodash}-{uid}-{cls.eid}",
             "input": json.dumps({
                 "date": date,
                 "context": {
@@ -67,7 +71,7 @@ class WorkflowInput:
         game_pk = game["gamePk"]
         startTimestamp = game["startTimestamp"]
         return {
-            "name": f"{workflowName}-{game_pk}-{startTimestamp}-{uid}",
+            "name": f"{workflowName}-{game_pk}-{startTimestamp}-{uid}-{cls.eid}",
             "input": json.dumps({
                 "game": {
                     **game,
@@ -91,7 +95,7 @@ class WorkflowInput:
         date = event["time"].split("T")[0]
         date_nodash = date.replace("-", "")
         return {
-            "name": f"{workflowName}-{date_nodash}-{uid}",
+            "name": f"{workflowName}-{date_nodash}-{uid}-{cls.eid}",
             "input": json.dumps({
                 "date": date,
                 "schedule": {
@@ -124,7 +128,7 @@ class WorkflowInput:
         date = event["time"].split("T")[0]
         date_nodash = date.replace("-", "")
         return {
-            "name": f"{workflowName}-{date_nodash}-{uid}",
+            "name": f"{workflowName}-{date_nodash}-{uid}-{cls.eid}",
             "input": json.dumps({
                 "date": date,
                 "season": {
@@ -158,7 +162,7 @@ def start_execution(event: dict, context):
         PREGAME_SFN_ARN: WorkflowInput.mlb_statsapi_etl_pregame,
         GAME_SFN_ARN: WorkflowInput.mlb_statsapi_etl_game,
     }[workflowArn]
-    return StepFunctions(boto3.client('stepfunctions', region_name=event["region"])).start_execution(
+    return StepFunctions(region_name=event["region"]).start_execution(
         stateMachineArn=workflowArn,
         **workflowInput(event, context)
     )
@@ -174,7 +178,7 @@ def parse_record(record: dict) -> dict:
         "type": body["Type"],
         "id": record["messageId"],
         "time": timestamp.strftime(YmdTHMSz_format),
-        "region": REGION,
+        "region": AWS_REGION,
         "message": Message,
         "resources": [
             body["TopicArn"]
@@ -183,13 +187,16 @@ def parse_record(record: dict) -> dict:
     }
 
 
+# noinspection PyPep8Naming
+def delete_message(receiptHandle: str):
+    SQS().delete_message(QueueUrl=WORKFLOW_QUEUE_URL, ReceiptHandle=receiptHandle)
+
+
 def lambda_handler(event: dict, context):
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")
     if "Records" in event:
-        from mlb_statsapi.utils.aws import SQS
-        sqs = SQS(boto3.client("sqs", region_name=REGION))
         res = []
         for record in event["Records"]:
             record_as_event = parse_record(record)
@@ -198,7 +205,7 @@ def lambda_handler(event: dict, context):
                 "executionArn": se["executionArn"],
                 "startDate": strfdatetime(se["startDate"], YmdTHMSz_format),
             })
-            sqs.delete_message(QueueUrl=WORKFLOW_QUEUE_URL, ReceiptHandle=record["receiptHandle"])
+            delete_message(record["receiptHandle"])
     else:
         se = start_execution(event, context)
         res = [{

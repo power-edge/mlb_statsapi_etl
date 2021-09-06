@@ -94,7 +94,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_schedule" {
         "ContainerOverrides": [
           {
             "Name": "${var.mlb_statsapi_etl_image-repository_name}",
-            "Command.$": "States.Array('python', '-u', '/app/mlb_statsapi_etl/src/mlb_statsapi/cli.py', 'Schedule', '--date', $.date, '--methods', 'schedule')",
+            "Command.$": "States.Array('python', '-u', '/app/mlb_statsapi_etl/src/mlb_statsapi/cli.py', 'Schedule', States.Format('--date={}', $.date), '-m=schedule')",
             "Environment": [
               {
                 "Name": "AWS_STEP_FUNCTIONS_EXECUTION_ID",
@@ -105,7 +105,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_schedule" {
                 "Value.$": "$$.Task.Token"
               },
               {
-                "Name": "AWS_REGION",
+                "Name": "MLB_STATSAPI__REGION",
                 "Value": "${var.aws_region}"
               }
             ]

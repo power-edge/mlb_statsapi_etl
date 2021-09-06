@@ -185,9 +185,8 @@ resource "aws_lambda_function" "mlb_statsapi_run_workflow_lambda" {
   environment {
     variables = {
       Description = "Handler to call start-execution for various step functions."
-      Env = var.env_name
-      REGION = var.aws_region
-//      MLB_STATSAPI__CONFIGS_PATH = "/opt/configs"
+      MLB_STATSAPI__ENV = var.env_name
+      MLB_STATSAPI__REGION = var.aws_region
       MLB_STATSAPI__SEASON_SFN_ARN = var.sf_mlb_statsapi_etl_season-arn
       MLB_STATSAPI__GAMEDAY_SFN_ARN = var.sf_mlb_statsapi_etl_gameday-arn
       MLB_STATSAPI__PREGAME_SFN_ARN = var.sf_mlb_statsapi_etl_pregame-arn

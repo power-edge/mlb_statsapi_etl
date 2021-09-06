@@ -20,7 +20,6 @@ variable "always_run-lambda-sf-season-state-set-season" {}
 variable "always_run-lambda-sf-gameday-state-date-in-season" {}
 variable "always_run-lambda-sf-gameday-state-set-scheduled-games" {}
 variable "always_run-lambda-sf-pregame-state-set-game" {}
-variable "always_run-lambda-sf-pregame-state-set-team" {}
 
 
 terraform {
@@ -50,7 +49,6 @@ locals {
     always_run-lambda-sf-gameday-state-set-scheduled-games = coalesce(var.always_run-lambda-sf-gameday-state-set-scheduled-games, timestamp())
 
     always_run-lambda-sf-pregame-state-set-game = coalesce(var.always_run-lambda-sf-pregame-state-set-game, timestamp())
-    always_run-lambda-sf-pregame-state-set-team = coalesce(var.always_run-lambda-sf-pregame-state-set-team, timestamp())
 }
 
 
@@ -103,6 +101,12 @@ module "mlb-statsapi-event-notification" {
 module "mlb-statsapi-workflow-notification" {
     source = "./tf/modules/notifications/mlb-statsapi-workflow-notification"
     aws_region = var.aws_region
+}
+
+module "mlb-statsapi-pregame-forecast-notification" {
+    source = "./tf/modules/notifications/mlb-statsapi-pregame-forecast-notification"
+    aws_region = var.aws_region
+    env_name = var.env_name
 }
 
 
@@ -181,7 +185,7 @@ module "sf-mlb-statsapi-game" {
 
     mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
 
-    sns_mlb_statsapi_event-arn = module.mlb-statsapi-event-notification.sns_mlb_statsapi_event-arn
+    mlb_statsapi_s3_data_bucket = module.s3-data-bucket.mlb_statsapi_s3_data_bucket
 
     depends_on = [
         module.iam-logs-delivery-full-access-policy,
@@ -225,26 +229,6 @@ module "lambda-sf-pregame-state-set-game" {
 }
 
 
-module "lambda-sf-pregame-state-set-team" {
-    source = "./tf/modules/lambda-function/lambda-sf-pregame-state-set-team"
-
-    aws_region = var.aws_region
-    env_name = var.env_name
-    always_run = local.always_run-lambda-sf-pregame-state-set-team
-
-    build_version = module.variables.build
-    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
-    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
-
-    depends_on = [
-        module.variables,
-        module.lambda-layer-mlb-statsapi
-    ]
-
-
-}
-
-
 module "sf-mlb-statsapi-season" {
     source = "./tf/modules/stepfunctions/sf-mlb-statsapi-season"
 
@@ -280,17 +264,26 @@ module "sf-mlb-statsapi-pregame" {
 
     sns_mlb_statsapi_event-arn = module.mlb-statsapi-event-notification.sns_mlb_statsapi_event-arn
     sns_mlb_statsapi_workflow-arn = module.mlb-statsapi-workflow-notification.sns_mlb_statsapi_workflow-arn
+    sns_mlb_statsapi_pregame_forecast-arn = module.mlb-statsapi-pregame-forecast-notification.sns_mlb_statsapi_pregame_forecast-arn
+    iam_policy_snsPublish_pregame_forecast-arn = module.mlb-statsapi-pregame-forecast-notification.iam_policy_snsPublish_pregame_forecast-arn
 
     mlb_statsapi_states_pregame_set_game_lambda-arn = module.lambda-sf-pregame-state-set-game.mlb_statsapi_states_pregame_set_game_lambda-arn
-    mlb_statsapi_states_pregame_set_team_lambda-arn = module.lambda-sf-pregame-state-set-team.mlb_statsapi_states_pregame_set_team_lambda-arn
     sf_mlb_statsapi_etl_game-arn = module.sf-mlb-statsapi-game.sf_mlb_statsapi_etl_game-arn
+
+    mlb_statsapi_s3_data_bucket = module.s3-data-bucket.mlb_statsapi_s3_data_bucket
+    sn_pub_a0_id = module.mlb-statsapi-vpc.sn_pub_a0_id
+    sn_pub_b0_id = module.mlb-statsapi-vpc.sn_pub_b0_id
+    mlb_statsapi_sg-id = module.mlb-statsapi-vpc.mlb_statsapi_sg-id
+    mlb_statsapi_etl_image-repository_name = module.ecr-mlb-statsapi-etl-repository.mlb_statsapi_etl_image-repository_name
+    ecs_cluster_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_cluster_mlb_statsapi_etl-arn
+    ecs_task_definition_mlb_statsapi_etl-arn = module.ecs-mlb-statsapi-etl-task.ecs_task_definition_mlb_statsapi_etl-arn
+    sf_mlb_statsapi_etl_runTask_policy-arn = module.iam-sf_mlb_statsapi_etl_runTask-policy.sf_mlb_statsapi_etl_runTask_policy-arn
 
     depends_on = [
         module.iam-logs-delivery-full-access-policy,
         module.mlb-statsapi-event-notification,
         module.mlb-statsapi-workflow-notification,
         module.lambda-sf-pregame-state-set-game,
-        module.lambda-sf-pregame-state-set-team,
         module.sf-mlb-statsapi-game
     ]
 }
@@ -367,16 +360,6 @@ module "lambda-sf-gameday-state-date-in-season" {
 }
 
 
-////dynamodb-mlb-statsapi-gameday.tf
-//module "dynamodb-mlb-statsapi-gameday" {
-//    source = "./tf/modules/dynamodb/dynamodb-mlb-statsapi-gameday"
-//    env_name = var.env_name
-//    aws_profile = var.aws_profile
-//    aws_account = var.aws_account
-//    aws_region = var.aws_region
-//}
-
-
 module "sf-mlb-statsapi-gameday" {
     source = "./tf/modules/stepfunctions/sf-mlb-statsapi-gameday"
 
@@ -404,41 +387,6 @@ module "sf-mlb-statsapi-gameday" {
     ]
 
 }
-//
-//
-//module "lambda-sf-gameday-trigger-start-execution" {
-//    source = "./tf/modules/lambda-function/lambda-sf-gameday-trigger-start-execution"
-//
-//    aws_region = var.aws_region
-//    env_name = var.env_name
-//    build_version = module.variables.build
-//    always_run = local.always_run-lambda-sf-gameday-trigger-start-execution
-//    mlb_statsapi_lambda_layer_arn = module.lambda-layer-mlb-statsapi.mlb_statsapi_lambda_layer_arn
-//
-//    sf_mlb_statsapi_etl_gameday = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday
-//    sf_mlb_statsapi_etl_gameday-arn = module.sf-mlb-statsapi-gameday.sf_mlb_statsapi_etl_gameday-arn
-//
-//    AWSLambdaBasicExecutionRole-arn = module.lambda-layer-mlb-statsapi.AWSLambdaBasicExecutionRole-arn
-//
-//    depends_on = [
-//        module.variables,
-//        module.lambda-layer-mlb-statsapi,
-//        module.sf-mlb-statsapi-gameday,
-//    ]
-//}
-
-
-//module "notifications" {
-//    source = "./tf/notifications"
-//    env_name = var.env_name
-//}
-
-
-//module "lambda-function-function" {
-//    source = "./tf/lambda-function-function"
-//    env_name = var.env_name
-//    sns_mlb_statsapi_set_scheduled_games_arn = module.notifications.sns_mlb_statsapi_set_scheduled_games_arn
-//}
 
 
 module "lambda-function-run-workflow" {
@@ -507,3 +455,18 @@ module "lambda-function-event-handler" {
         module.s3-data-bucket,
     ]
 }
+
+
+output "env_name" {value = var.env_name}
+output "aws_region" {value = var.aws_region}
+output "project_name" {value = var.project_name}
+output "vpc_cidr_block" {value = var.vpc_cidr_block}
+output "always_run-ecr-mlb-statsapi-etl-build" {value = local.always_run-ecr-mlb-statsapi-etl-build}
+output "always_run-ecr-mlb-statsapi-etl-push" {value = local.always_run-ecr-mlb-statsapi-etl-push}
+output "always_run-lambda-layer-mlb-statsapi" {value = local.always_run-lambda-layer-mlb-statsapi}
+output "always_run-lambda-function-run-workflow" {value = local.always_run-lambda-function-run-workflow}
+output "always_run-lambda-function-event-handler" {value = local.always_run-lambda-function-event-handler}
+output "always_run-lambda-sf-season-state-set-season" {value = local.always_run-lambda-sf-season-state-set-season}
+output "always_run-lambda-sf-gameday-state-date-in-season" {value = local.always_run-lambda-sf-gameday-state-date-in-season}
+output "always_run-lambda-sf-gameday-state-set-scheduled-games" {value = local.always_run-lambda-sf-gameday-state-set-scheduled-games}
+output "always_run-lambda-sf-pregame-state-set-game" {value = local.always_run-lambda-sf-pregame-state-set-game}

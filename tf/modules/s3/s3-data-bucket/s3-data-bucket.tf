@@ -36,7 +36,10 @@ resource "aws_iam_policy" "mlb_statsapi_s3_data_bucket_service_policy" {
           "s3:PutObject",
           "s3:ListBucket",
         ]
-        Resource = "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.gz"
+        Resource = [
+          "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.gz",
+          "${aws_s3_bucket.mlb_statsapi_s3_data_bucket.arn}/*/api/v*/*.json.tar.gz"
+        ]
       },
       {
         Effect = "Allow"

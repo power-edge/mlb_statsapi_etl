@@ -4,30 +4,19 @@ created by nikos at 8/10/21
 import json
 import sys
 
-from mlb_statsapi.functions import game_timestamp_format, strfdatetime, strpdatetime, YmdTHMSz_format
+from mlb_statsapi.utils import YmdTHMSz_format, game_timestamp_format, strpdatetime, strfdatetime
 
 
-def get_pregame_timecode(liveTimestampv11: callable, game: dict) -> str:
-    from mlb_statsapi.utils.stats_api_object import StatsAPIObject
-    start_pregame = strfdatetime(
-        strpdatetime(game["startPregame"], YmdTHMSz_format),
-        game_timestamp_format
-    )
-    game_pk = game["gamePk"]
-
-    timecodes: StatsAPIObject = StatsAPI.Game.liveTimestampv11(
-        path_params={"game_pk": game_pk},
-    ).get()
-
-
+# noinspection PyPep8Naming
 def get_timecode(game: dict, liveTimestampv11: callable):
     startPregame: str = strfdatetime(strpdatetime(game["startPregame"], YmdTHMSz_format), game_timestamp_format)
     timecodes = liveTimestampv11(path_params={"game_pk": game["gamePk"]}).get().obj
     if len(timecodes):
-      return max([min(timecodes), *filter(startPregame.__ge__, timecodes)])
+        return max([min(timecodes), *filter(startPregame.__ge__, timecodes)])
     return startPregame
 
 
+# stats_api_object.
 def getLiveGameV1(game: dict) -> dict:
     from mlb_statsapi.model import StatsAPI
     timecode = get_timecode(game, StatsAPI.Game.liveTimestampv11)
@@ -41,43 +30,43 @@ def getLiveGameV1(game: dict) -> dict:
     ).get()
 
 
-def get_sns_for_officials(liveGame) -> list:
-    from mlb_statsapi.utils.stats_api_object import StatsAPIObject
-    liveGame: StatsAPIObject
-    gameData = liveGame.obj["gameData"]
+# noinspection PyPep8Naming
+def set_official(liveGame) -> dict:
+    from mlb_statsapi.utils import stats_api_object
+    liveGame: stats_api_object.StatsAPIObject
     liveData = liveGame.obj["liveData"]
-    return [{
-        "api": "Person",
+    officials = liveData["boxscore"]["officials"]
+    return {
         "method": "person",
-        "path_params": {
-            "personId": official["official"]["id"]
-        },
-        "query_params": {
-            "season": gameData["game"]["season"]
-        }
-    } for official in liveData["boxscore"]["officials"]]
+        "-pi": ' '.join(str(official["official"]["id"]) for official in officials),
+        "officials": officials
+    }
 
 
-def get_sns_for_teams(game: dict) -> list:
-    return [{
-        "api": "Team",
+def set_team(game: dict) -> dict:
+    return {
         "method": "roster",
-        "path_params": {
-            "teamId": team["team"]["id"],
-            "rosterType": "depthChart"
-        },
-        "query_params": {
-            "date": game["officialDate"]
-        }
-    } for half, team in game["teams"].items()]
+        "rosterType": "depthChart"
+    }
 
 
-def lambda_handler(event: dict, context) -> bool:
+# noinspection PyPep8Naming,PyUnresolvedReferences
+def get_forecast(game, liveGame: object) -> dict:
+    return {
+        "Venue": liveGame.obj["gameData"]["venue"],
+        "Time": game["startPregame"],
+        "Part": "gamePk=%s" % game["gamePk"]
+    }
+
+
+# noinspection PyPep8Naming
+def lambda_handler(event: dict, context) -> dict:
     print(f"{context.function_name=}:{context.function_version=}, {context.log_group_name=}:{context.log_stream_name=}")
     print('event', json.dumps(event))
     sys.path.append("/opt")
     liveGame = getLiveGameV1(event["game"])
     return {
-        "teams": get_sns_for_teams(event["game"]),
-        "officials": get_sns_for_officials(liveGame)
+        "Team": set_team(event["game"]),
+        "Official": set_official(liveGame),
+        "Forecast": get_forecast(event["game"], liveGame)
     }

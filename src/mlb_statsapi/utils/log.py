@@ -6,20 +6,20 @@ import os
 
 root = logging.getLogger('mlb_statsapi')
 root.setLevel(logging.INFO)
-console = logging.StreamHandler()
-logging_format = ' '.join([
-    '[%(asctime)s]',
+# root.propagate = os.environ.get('AIRFLOW_CTX_EXECUTION_DATE') is None
+root.propagate = False
+logging_format = [
+    # '[%(asctime)s]',
     '{%(filename)s:%(lineno)d}',
     '%(name)s',
-    '%(processName)s.%(threadName)s',
+    '%(threadName)s',
     '%(levelname)s',
     '-',
     '%(message)s'
-])
-bf = logging.Formatter(logging_format)
-console.setFormatter(bf)
-root.addHandler(console)
-root.propagate = os.environ.get('AIRFLOW_CTX_EXECUTION_DATE') is None
+]
+formatter = logging.Formatter(' '.join(logging_format))
+
+loggers = {}
 
 
 class LogMixin:
@@ -30,7 +30,19 @@ class LogMixin:
             return self._log
         except AttributeError:
             # noinspection PyAttributeOutsideInit
-            self._log = logging.root.getChild(
-                self.__class__.__module__ + '.' + self.__class__.__name__
-            )
+            self._log = get_logger(self)
             return self._log
+
+
+# noinspection PyPep8Naming
+def get_logger(logMixin: LogMixin):
+    global loggers
+    name = logMixin.__class__.__module__ + '.' + logMixin.__class__.__name__
+    if loggers.get(name) is None:
+        loggers[name] = logging.root.getChild(name)
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        loggers[name].addHandler(console)
+    return loggers[name]
+
+

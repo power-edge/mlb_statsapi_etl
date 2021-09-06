@@ -12,15 +12,21 @@ from src.mlb_statsapi import __author__, __email__, __version__
 #     history = history_file.read()
 
 install_requires = [
+    "botocore==1.20.100",
+    "boto3==1.17.100",
     'requests==2.25.1',
     'serde==0.8.1',
     "pytz==2021.1",
-    "PyYAML==5.4.1"
+    "PyYAML==5.4.1",
+    'python-dateutil==2.8.1'
 ]
 
 setup_requirements = ['pytest-runner', ]
 
-test_requirements = ['pytest>=3', ]
+test_requirements = [
+    'pytest>=3',
+    "mock==4.0.3"
+]
 
 setup(
     name='mlb_statsapi_etl',
@@ -56,7 +62,7 @@ setup(
     url='https://github.com/power-edge/mlb_statsapi_etl',
     version=__version__,
     zip_safe=False,
-    packages=setuptools.find_packages("src"),
+    packages=setuptools.find_packages("./src"),
     package_data={"configs": [
         'configs/statsapi/**',
         "configs/endpoint-model.yaml"

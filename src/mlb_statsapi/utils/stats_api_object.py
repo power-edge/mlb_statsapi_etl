@@ -1,19 +1,19 @@
 """
 created by nikos at 5/2/21
 """
+import gzip
 import json
 import os
+import requests
+import typing
+
 from functools import wraps
 
-import boto3
-import requests
-import tarfile
-import zipfile
-import gzip
+from . import aws
 
-from mlb_statsapi import DATA_BUCKET
 from .log import LogMixin
 from .endpoint_config import EndpointConfig
+
 
 class StatsAPIObject(LogMixin):
     """
@@ -24,7 +24,7 @@ class StatsAPIObject(LogMixin):
     base_url_path = r'https://statsapi.mlb.com/api'
     base_file_path = os.environ.get('MLB_STATSAPI__BASE_FILE_PATH', './.var/local/mlb_statsapi')
 
-    bucket = DATA_BUCKET
+    bucket = aws.S3_DATA_BUCKET
 
     def __init__(
         self,
@@ -44,7 +44,7 @@ class StatsAPIObject(LogMixin):
         self.file_path = os.path.realpath(f"{self.base_file_path}/{self.keyspace}.json")
         self.url = self.base_url_path + self.path  # path should start with /
         # noinspection PyTypeChecker
-        self.obj: dict = None
+        self.obj: typing.Union[list, dict] = None
 
     def __repr__(self):
         return '{cls}(endpoint={endpoint}, api={api}, path={path})'.format(
@@ -54,10 +54,12 @@ class StatsAPIObject(LogMixin):
             path=self.path
         )
 
-    @property
-    def exists(self):
-        exists_is_true = os.path.isfile(self.file_path)
-        return exists_is_true
+    def exists(self, ext: str):
+        return os.path.isfile({
+            'json': self.file_path,
+            'json.gz': self.gz_path,
+            'json.tar.gz': self.tar_gz_path
+        }[ext])
 
     def get(self):
         response = requests.get(self.url, headers={'Accept-Encoding': 'gzip'})
@@ -66,18 +68,18 @@ class StatsAPIObject(LogMixin):
         self.obj = response.json()
         if isinstance(self.obj, dict) and ("copyright" in self.obj.keys()):
             self.obj.pop("copyright")
-        self.log.debug("got %s from %s" % (self, self.url))
+        self.log.info("got %s from %s" % (self, self.url))
         return self
 
     def load(self, ext='json.gz'):
         if ext == 'json':
             with open(self.file_path, 'r') as f:
                 self.obj = json.load(f)
-            print("loaded %s from %s" % (self, self.file_path))
+            self.log.info("loaded %s from %s" % (self, self.file_path))
         elif ext == 'json.gz':
             with gzip.open(self.gz_path, 'r') as f:  # 4. gzip
                 self.obj = json.loads(f.read().decode('utf-8'))
-            print("loaded %s from %s" % (self, self.gz_path))
+            self.log.info("loaded %s from %s" % (self, self.gz_path))
         else:
             raise NotImplementedError("reading from %s is not supported" % ext)
         return self
@@ -85,8 +87,7 @@ class StatsAPIObject(LogMixin):
     def prefix(self, ext='json.gz'):
         return f"{self.keyspace}.{ext}"
 
-    def upload_file(self, ext='json.gz', client=None):
-        from mlb_statsapi.utils.aws import S3
+    def upload_file(self, ext='json.gz'):
         kwargs = {
             'Filename': {
                 'json': self.file_path,
@@ -96,12 +97,12 @@ class StatsAPIObject(LogMixin):
             'Bucket': self.bucket,
             'Key': self.prefix(ext)
         }
-        return S3(client or boto3.client('s3')).upload_file(**kwargs)
+        return aws.S3().upload_file(**kwargs)
 
     def dumps(self, indent=0) -> str:
         return json.dumps(self.obj, indent=indent)
 
-    def download_file(self, ext='json.gz', client=None):
+    def download_file(self, ext='json.gz'):
         kwargs = {
             'Filename': {
                 'json': self.file_path,
@@ -111,28 +112,24 @@ class StatsAPIObject(LogMixin):
             'Bucket': self.bucket,
             'Key': self.prefix(ext)
         }
-        return S3(client or boto3.client('s3')).download_file(**kwargs)
+        if not os.path.isdir(os.path.dirname(self.prefix(ext))):
+            os.makedirs(os.path.dirname(self.prefix(ext)))
+        return aws.S3().download_file(**kwargs)
 
     def save(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):
             os.makedirs(os.path.dirname(self.file_path))
         with open(f"{self.file_path}", 'w') as f:
             f.write(json.dumps(self.obj))
-        print("saved %s to %s" % (self, self.file_path))
+        self.log.debug("saved %s to %s" % (self, self.file_path))
         # os.chmod(self.file_path, stat.S_IREAD)
-
-    def tar(self):
-        tf = tarfile.open(self.tar_gz_path, mode="w:gz")
-        tf.add(self.file_path)
-        tf.close()
-        print(f"gzipped {self.tar_gz_path}")
 
     def gzip(self):
         if not os.path.isdir(os.path.dirname(self.file_path)):
             os.makedirs(os.path.dirname(self.file_path))
         with gzip.open(self.gz_path, 'wb') as f:
             f.write(json.dumps(self.obj).encode('utf-8'))
-        print("gzipped %s to %s" % (self, self.gz_path))
+        self.log.debug("gzipped %s to %s" % (self, self.gz_path))
 
     @property
     def tar_gz_path(self):
@@ -184,7 +181,7 @@ def resolve_path(api, operation, path_params=None, query_params=None):
         if param_name in query_params:
             arg_val = query_params.pop(param_name)
             if isinstance(arg_val, list):
-                assert (len(arg_val) == 1) or query_param.allowMultiple, f'multiple {param_name} not allowed, got %s' % arg_val
+                assert (len(arg_val) == 1) or query_param.allowMultiple, (f'multiple {param_name} not allowed, got %s' % arg_val)
                 arg_val = ','.join([*map(str, arg_val)])
             else:
                 arg_val = str(arg_val)
@@ -222,3 +219,22 @@ def configure_api(func):
             return func(*args, **kwargs)
 
     return wrapper
+
+
+def upload_file(method: callable, path_params: dict = None, query_params: dict = None, force: bool = False):
+    obj: StatsAPIObject = method(path_params=path_params, query_params=query_params)
+    res = {
+        "bucket": obj.bucket,
+        "prefix": obj.prefix(),
+        "endpoint": obj.endpoint.get_name(),
+        "path_params": obj.path_params,
+        "query_params": obj.query_params,
+        "force": force
+    }
+    if force or (not aws.S3().exists(obj.bucket, obj.prefix())):
+        obj.get().gzip()
+        obj.upload_file()
+        res.update({
+            "size": os.path.getsize(obj.gz_path),
+        })
+    return res
