@@ -16,8 +16,12 @@ clean_stage(){
 }
 
 create_environment(){
-  # sudo apt-get install python3-venv
-  # make sure to have python 3.8
+  if [ "$(python -m pip list | awk '{ print $1 }' | grep -c virtualenv)" -eq "0" ]; then
+    # sudo apt-get install python3-venv
+    sudo apt-get install python3-venv
+    # make sure to have python 3.8 with virtualenv==20.7.2
+    python -m pip install virtualenv==20.7.2
+  fi
   python3 -m virtualenv --python="$(which python3.8)" "./$LAYER_NAME"
 }
 

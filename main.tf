@@ -72,6 +72,7 @@ module "s3-data-bucket" {
     source = "./tf/modules/s3/s3-data-bucket"
     env_name = var.env_name
     aws_region = var.aws_region
+    aws_account = var.aws_account
 }
 
 
@@ -461,3 +462,5 @@ output "always_run-lambda-sf-season-state-set-season" {value = local.always_run-
 output "always_run-lambda-sf-gameday-state-date-in-season" {value = local.always_run-lambda-sf-gameday-state-date-in-season}
 output "always_run-lambda-sf-gameday-state-set-scheduled-games" {value = local.always_run-lambda-sf-gameday-state-set-scheduled-games}
 output "always_run-lambda-sf-pregame-state-set-game" {value = local.always_run-lambda-sf-pregame-state-set-game}
+output "sns_objectCreated_arn" {value = module.s3-data-bucket.sns_objectCreated_arn}
+output "mlb_statsapi_s3_data_bucket_arn" {value = module.s3-data-bucket.mlb_statsapi_s3_data_bucket_arn}

@@ -129,7 +129,7 @@ class StatsAPIObject(LogMixin):
             os.makedirs(os.path.dirname(self.file_path))
         with gzip.open(self.gz_path, 'wb') as f:
             f.write(json.dumps(self.obj).encode('utf-8'))
-        self.log.debug("gzipped %s to %s" % (self, self.gz_path))
+        self.log.info("gzipped %s to %s" % (self, self.gz_path))
 
     @property
     def tar_gz_path(self):
