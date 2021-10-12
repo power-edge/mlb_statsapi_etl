@@ -108,3 +108,9 @@ ENV/
 
 .var/
 .pypirc
+
+/workflow/logs/
+
+/.terraform**
+/tf/local-exec/lambda-**/**.zip
+/tfplan

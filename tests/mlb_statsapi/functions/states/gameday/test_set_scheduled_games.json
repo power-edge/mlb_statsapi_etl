@@ -1,0 +1,7 @@
+{
+    "date": "2020-09-05",
+    "context": {
+        "function_name": "mlb_statsapi-states-gameday-date_in_season",
+        "log_group_name": "/aws/lambda/mlb_statsapi-states-gameday-date_in_season"
+    }
+}

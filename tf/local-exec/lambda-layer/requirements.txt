@@ -1,0 +1,5 @@
+requests==2.25.1
+serde==0.8.1
+pytz==2021.1
+PyYAML==5.4.1
+isodate==0.6.0

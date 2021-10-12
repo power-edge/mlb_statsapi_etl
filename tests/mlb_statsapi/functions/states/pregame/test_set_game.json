@@ -1,0 +1,84 @@
+{
+  "game": {
+    "gamePk": 632654,
+    "link": "/api/v1.1/game/632654/feed/live",
+    "gameType": "R",
+    "season": "2021",
+    "gameDate": "2021-09-03T23:10:00Z",
+    "officialDate": "2021-09-03",
+    "status": {
+      "abstractGameState": "Preview",
+      "codedGameState": "S",
+      "detailedState": "Scheduled",
+      "statusCode": "S",
+      "startTimeTBD": false,
+      "abstractGameCode": "P"
+    },
+    "teams": {
+      "away": {
+        "leagueRecord": {
+          "wins": 63,
+          "losses": 72,
+          "pct": ".467"
+        },
+        "team": {
+          "id": 116,
+          "name": "Detroit Tigers",
+          "link": "/api/v1/teams/116"
+        },
+        "splitSquad": false,
+        "seriesNumber": 44
+      },
+      "home": {
+        "leagueRecord": {
+          "wins": 72,
+          "losses": 63,
+          "pct": ".533"
+        },
+        "team": {
+          "id": 113,
+          "name": "Cincinnati Reds",
+          "link": "/api/v1/teams/113"
+        },
+        "splitSquad": false,
+        "seriesNumber": 45
+      }
+    },
+    "venue": {
+      "id": 2602,
+      "name": "Great American Ball Park",
+      "link": "/api/v1/venues/2602"
+    },
+    "content": {
+      "link": "/api/v1/game/632654/content"
+    },
+    "gameNumber": 1,
+    "publicFacing": true,
+    "doubleHeader": "N",
+    "gamedayType": "P",
+    "tiebreaker": "N",
+    "calendarEventID": "14-632654-2021-09-03",
+    "seasonDisplay": "2021",
+    "dayNight": "night",
+    "scheduledInnings": 9,
+    "reverseHomeAwayStatus": false,
+    "inningBreakLength": 120,
+    "gamesInSeries": 3,
+    "seriesGameNumber": 1,
+    "seriesDescription": "Regular Season",
+    "recordSource": "S",
+    "ifNecessary": "N",
+    "ifNecessaryDescription": "Normal Game",
+    "startPregame": "2021-09-03T22:10:00+00:00",
+    "startTimestamp": "20210903_231000",
+    "uid": "1df983ad",
+    "workflow": {
+      "name": "mlb_statsapi_etl_game",
+      "arn": "arn:aws:states:us-west-2:623650261134:stateMachine:mlb_statsapi_etl_game"
+    }
+  },
+  "context": {
+    "function_name": "mlb_statsapi-states-pregame-set_game",
+    "log_group_name": "/aws/lambda/mlb_statsapi-states-pregame-set_game"
+  }
+}

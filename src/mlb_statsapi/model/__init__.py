@@ -52,7 +52,7 @@ class StatsAPI:
     Team = TeamModel.from_doc()
 
     ALL = [
-        # ApiDocs,
+        ApiDocs,
         Awards,
         Broadcast,
         Conference,
@@ -76,3 +76,27 @@ class StatsAPI:
         Team,
     ]
 
+    API_MAP = {
+        "ApiDocs": ApiDocs,
+        "Awards": Awards,
+        "Broadcast": Broadcast,
+        "Conference": Conference,
+        "Config": Config,
+        "Division": Division,
+        "Draft": Draft,
+        "Game": Game,
+        "Gamepace": Gamepace,
+        "HighLow": HighLow,
+        "HomeRunDerby": HomeRunDerby,
+        "Job": Job,
+        "League": League,
+        "Milestones": Milestones,
+        "Person": Person,
+        "Schedule": Schedule,
+        "Season": Season,
+        "Sports": Sports,
+        "Standings": Standings,
+        "Stats": Stats,
+        "Streaks": Streaks,
+        "Team": Team,
+    }
