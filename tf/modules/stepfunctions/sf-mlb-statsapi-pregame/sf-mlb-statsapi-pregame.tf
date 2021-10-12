@@ -31,7 +31,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_pregame" {
         "TopicArn": "${var.sns_mlb_statsapi_pregame_forecast-arn}",
         "Message.$": "States.JsonToString($.set_game.Forecast)",
         "MessageAttributes": {
-          "Sport": {
+          "League": {
             "DataType": "String",
             "StringValue": "mlb"
           },
@@ -165,7 +165,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_pregame" {
         "TopicArn": "${var.sns_mlb_statsapi_workflow-arn}",
         "Message.$": "States.JsonToString($.game)",
         "MessageAttributes": {
-          "Sport": {
+          "League": {
             "DataType": "String",
             "StringValue": "MLB"
           },

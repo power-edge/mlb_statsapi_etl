@@ -66,7 +66,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_season" {
         "TopicArn": "${var.sns_mlb_statsapi_event-arn}",
         "Message.$": "States.JsonToString($.season.message)",
         "MessageAttributes": {
-          "Sport": {
+          "League": {
             "DataType": "String",
             "StringValue": "MLB"
           }

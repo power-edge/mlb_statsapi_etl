@@ -63,7 +63,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_gameday" {
         "TopicArn": "${var.sns_mlb_statsapi_workflow-arn}",
         "Message.$": "States.JsonToString($.schedule.message)",
         "MessageAttributes": {
-          "Sport": {
+          "League": {
             "DataType": "String",
             "StringValue": "MLB"
           }
@@ -95,7 +95,7 @@ resource "aws_sfn_state_machine" "sf_mlb_statsapi_etl_gameday" {
               "TopicArn": "${var.sns_mlb_statsapi_workflow-arn}",
               "Message.$": "States.JsonToString($.game)",
               "MessageAttributes": {
-                "Sport": {
+                "League": {
                   "DataType": "String",
                   "StringValue": "MLB"
                 }
