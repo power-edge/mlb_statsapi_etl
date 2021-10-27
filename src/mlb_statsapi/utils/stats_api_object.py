@@ -64,8 +64,7 @@ class StatsAPIObject(LogMixin):
             'json.tar.gz': self.tar_gz_path
         }[ext])
 
-    def get(self, tries=0):
-        status_code = -1
+    def get(self, tries: int = 0):
         try:
             response = requests.get(self.url, headers={'Accept-Encoding': 'gzip'})
             status_code = response.status_code
@@ -74,14 +73,15 @@ class StatsAPIObject(LogMixin):
             self.obj.pop("copyright") if isinstance(self.obj, dict) and ("copyright" in self.obj.keys()) else ()
             self.log.info("got %s from %s on try %d" % (self, self.url, tries))
             return self
-        except AssertionError as ae:
-            if status_code == 530 and tries <= self.max_get_tries:
-                self.log.warning("%s.get retry %d" % (str(self), tries + 1))
+        except (AssertionError, requests.exceptions.ConnectionError) as e:
+            with_exception = "with %s on try %d" % (e, tries + 1)
+            if tries <= self.max_get_tries:
+                self.log.warning("%s.get retry %s" % (self, with_exception))
                 sleep(tries)
                 return self.get(tries+1)
             else:
-                self.log.error("%s.get failed for %d tries" % tries)
-                raise ae
+                self.log.error("%s.get failed %s" % (self, with_exception))
+                raise e
 
     def load(self, ext='json.gz'):
         if ext == 'json':
