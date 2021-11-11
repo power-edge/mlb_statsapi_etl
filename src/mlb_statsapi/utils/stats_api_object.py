@@ -4,6 +4,8 @@ created by nikos at 5/2/21
 import gzip
 import json
 import os
+from time import sleep
+
 import requests
 import typing
 
@@ -23,6 +25,7 @@ class StatsAPIObject(LogMixin):
 
     base_url_path = r'https://statsapi.mlb.com/api'
     base_file_path = os.environ.get('MLB_STATSAPI__BASE_FILE_PATH', './.var/local/mlb_statsapi')
+    max_get_tries = int(os.environ.get('MLB_STATSAPI__BASE_FILE_PATH', '5'))
 
     bucket = aws.S3_DATA_BUCKET
 
@@ -61,15 +64,24 @@ class StatsAPIObject(LogMixin):
             'json.tar.gz': self.tar_gz_path
         }[ext])
 
-    def get(self):
-        response = requests.get(self.url, headers={'Accept-Encoding': 'gzip'})
-        status_code = response.status_code
-        assert status_code == 200, f'get {self.url} failed with status {status_code}: {response.content.decode()}'
-        self.obj = response.json()
-        if isinstance(self.obj, dict) and ("copyright" in self.obj.keys()):
-            self.obj.pop("copyright")
-        self.log.info("got %s from %s" % (self, self.url))
-        return self
+    def get(self, tries: int = 0):
+        try:
+            response = requests.get(self.url, headers={'Accept-Encoding': 'gzip'})
+            status_code = response.status_code
+            assert status_code == 200, f'get {self.url} failed with status {status_code}: {response.content.decode()}'
+            self.obj = response.json()
+            self.obj.pop("copyright") if isinstance(self.obj, dict) and ("copyright" in self.obj.keys()) else ()
+            self.log.info("got %s from %s on try %d" % (self, self.url, tries))
+            return self
+        except (AssertionError, requests.exceptions.ConnectionError) as e:
+            with_exception = "with %s on try %d" % (e, tries + 1)
+            if tries <= self.max_get_tries:
+                self.log.warning("%s.get retry %s" % (self, with_exception))
+                sleep(tries)
+                return self.get(tries+1)
+            else:
+                self.log.error("%s.get failed %s" % (self, with_exception))
+                raise e
 
     def load(self, ext='json.gz'):
         if ext == 'json':
